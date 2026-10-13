@@ -286,6 +286,18 @@
     titleJobs.push(job);
   });
 
+  /* ================= Instagram embeds (both locations) ================= */
+  on('#instagram', sec => {
+    const load = panel => $$('iframe[data-src]', panel).forEach(f => { f.src = f.dataset.src; f.removeAttribute('data-src'); });
+    let near = false;
+    new IntersectionObserver(es => { if (es[0].isIntersecting && !near) { near = true; load($('.ig-panel.on', sec)); } }, { rootMargin: '700px 0px' }).observe(sec);
+    $$('.ig-switch button', sec).forEach(b => b.addEventListener('click', () => {
+      $$('.ig-switch button', sec).forEach(x => x.setAttribute('aria-selected', x === b));
+      $$('.ig-panel', sec).forEach(p => p.classList.toggle('on', p.dataset.igPanel === b.dataset.ig));
+      if (near) load($('.ig-panel.on', sec));
+    }));
+  });
+
   /* ================= 3D trophy stage ================= */
   on('#trophy3d', host => {
     const stage = $('#trophyStage');
