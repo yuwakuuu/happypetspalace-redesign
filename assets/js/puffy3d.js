@@ -274,7 +274,7 @@
       vec3 n = normalize(vN);
       vec3 v = vec3(0.0, 0.0, 1.0);
       float ndv = clamp(dot(n, v), 0.0, 1.0);
-      float fr = smoothstep(.93, .12, ndv);                // clear in the flat middle, building toward the rims (hides mesh seams)
+      float fr = smoothstep(.97, .15, ndv);                // clear in the middle, building toward the rims
       // thin-film colours: hue rides the viewing angle plus a slow swirl
       float h = fr * 1.6 + n.x * .25 - n.y * .18 + vP.x * .0025 + uTime * .06;
       vec3 film = .5 + .5 * cos(6.2831 * (h + vec3(0.0, .33, .67)));
@@ -285,10 +285,10 @@
       float win = smoothstep(.5, .9, r.y) * smoothstep(-.05, .5, -r.x);
       float spec = pow(max(dot(r, normalize(vec3(-.45, .65, .6))), 0.0), 70.0) + .6 * pow(max(dot(r, normalize(vec3(.55, .25, .8))), 0.0), 120.0);
       vec3 col = env * mix(vec3(1.0), film, .65);
-      col = mix(col, uTint, .2);                          // a whisper of brand colour
+      col = mix(col, uTint, .34);                         // brand colour in the film
       float edge = smoothstep(.26, .0, ndv);              // defined silhouette so it reads on white
-      col = mix(col, vec3(.36, .4, .5) * mix(vec3(1.0), film, .5), edge * .55);
-      float a = .025 + fr * .66 + edge * .22 + win * .22 * fr + spec * fr;
+      col = mix(col, mix(vec3(.3, .32, .42), uTint * .55, .5) * mix(vec3(1.0), film, .5), edge * .75);
+      float a = .05 + fr * .7 + edge * .25 + win * .22 * fr + spec * fr;
       col += spec * .8;
       gl_FragColor = vec4(col, clamp(a, 0.0, .95) * uFade);
     }`;
@@ -297,8 +297,90 @@
     uniforms: { uTime: { value: 0 }, uWob: { value: .6 }, uTint: { value: new T.Color(tint) }, uFade: { value: 1 } }
   });
 
-  const BUBBLE_INFLATE = [.47, .072, -.055];   // fat tubes, but no growing into the letter holes (no folds when see-through)
-  H.bubbles = (el, words, { fontName = 'fredoka', onHit } = {}) => {
+  /* ---------- inflated-word geometry ----------
+     Each WORD becomes one continuous balloon: rasterise it (fattened so neighbouring letters fuse),
+     compute a signed distance field, then raise a smooth dome over it (front + mirrored back).
+     No per-letter extrusion means no seams, no overlapping letters and no sharp creases. */
+  function edt1d(f, n, d, v, z) {          // Felzenszwalb squared distance transform, 1-D
+    let k = 0; v[0] = 0; z[0] = -1e20; z[1] = 1e20;
+    for (let q = 1; q < n; q++) {
+      let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+      k++; v[k] = q; z[k] = s; z[k + 1] = 1e20;
+    }
+    k = 0;
+    for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]]; }
+  }
+  function edt(grid, W, H) {               // grid: 0 at sources, INF elsewhere -> Euclidean distance
+    const n = Math.max(W, H), f = new Float64Array(n), d = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1);
+    for (let x = 0; x < W; x++) { for (let y = 0; y < H; y++) f[y] = grid[y * W + x]; edt1d(f, H, d, v, z); for (let y = 0; y < H; y++) grid[y * W + x] = d[y]; }
+    for (let y = 0; y < H; y++) { for (let x = 0; x < W; x++) f[x] = grid[y * W + x]; edt1d(f, W, d, v, z); for (let x = 0; x < W; x++) grid[y * W + x] = Math.sqrt(d[x]); }
+    return grid;
+  }
+  const wordGeoCache = new Map();
+  function inflatedWord(text) {
+    if (wordGeoCache.has(text)) return wordGeoCache.get(text);
+    const F = 150, fontCss = `700 ${F}px "Fredoka", system-ui, sans-serif`;
+    const m = document.createElement('canvas').getContext('2d'); m.font = fontCss;
+    const spacing = -F * .035;   // tight tracking so neighbours kiss and fuse
+    if ('letterSpacing' in m) m.letterSpacing = spacing + 'px';
+    const tw = m.measureText(text).width, pad = Math.round(F * .3);
+    const W = Math.ceil(tw + pad * 2), Hh = Math.ceil(F * 1.35 + pad * 2), base = pad + F * 1.0;
+    const c = document.createElement('canvas'); c.width = W; c.height = Hh;
+    const g2 = c.getContext('2d', { willReadFrequently: true });
+    g2.font = fontCss; if ('letterSpacing' in g2) g2.letterSpacing = spacing + 'px';
+    g2.lineJoin = 'round'; g2.lineWidth = F * .045; g2.strokeStyle = g2.fillStyle = '#000';
+    g2.fillText(text, pad, base); g2.strokeText(text, pad, base);   // the stroke fattens letters so neighbours fuse
+    const A = g2.getImageData(0, 0, W, Hh).data, N = W * Hh, INF = 1e20;
+    const inside = new Float64Array(N), outside = new Float64Array(N);
+    for (let i = 0; i < N; i++) { const on = A[i * 4 + 3] > 127; inside[i] = on ? INF : 0; outside[i] = on ? 0 : INF; }
+    edt(inside, W, Hh); edt(outside, W, Hh);
+    const sdf = i => inside[i] > 0 ? inside[i] - .5 : -(outside[i] - .5);
+    const S = (x, y) => { x = Math.max(0, Math.min(W - 1.001, x)); y = Math.max(0, Math.min(Hh - 1.001, y)); const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, i = y0 * W + x0;
+      return (sdf(i) * (1 - fx) + sdf(i + 1) * fx) * (1 - fy) + (sdf(i + W) * (1 - fx) + sdf(i + W + 1) * fx) * fy; };
+    // tube radius ~ the thickest stroke half-width, so strokes become round tubes
+    let maxIn = 0; for (let i = 0; i < N; i++) if (inside[i] > maxIn) maxIn = inside[i];
+    const R = maxIn * .95, step = MOBILE ? 5 : 3.2;
+    const nx = Math.ceil(W / step) + 1, ny = Math.ceil(Hh / step) + 1, scale = SIZE / F;
+    const pos = [], keep = new Uint8Array(nx * ny), front = new Int32Array(nx * ny).fill(-1), back = new Int32Array(nx * ny).fill(-1);
+    const idx = [];
+    const vx = [], vy = [], vh = [];
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      let x = i * step, y = j * step, d = S(x, y);
+      if (d < -step * 1.6) continue;
+      if (d < 0) {   // snap near-outside vertices onto the outline so the silhouette is smooth, not stair-stepped
+        const gx = S(x + 1, y) - S(x - 1, y), gy = S(x, y + 1) - S(x, y - 1), gl = Math.hypot(gx, gy) || 1;
+        x -= gx / gl * d; y -= gy / gl * d; d = 0;
+      }
+      const t = Math.min(d, R) / R, h = R * Math.sqrt(Math.max(0, 1 - (1 - t) * (1 - t)));   // round tube profile
+      keep[j * nx + i] = 1; vx[j * nx + i] = x; vy[j * nx + i] = y; vh[j * nx + i] = h;
+    }
+    const P = [];
+    const addV = (k, sgn) => { P.push((vx[k] - pad) * scale, (base - vy[k]) * scale, sgn * vh[k] * scale * .82); return P.length / 3 - 1; };
+    for (let k = 0; k < nx * ny; k++) if (keep[k]) { front[k] = addV(k, 1); back[k] = addV(k, -1); }
+    for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+      const a = j * nx + i, b = a + 1, c2 = a + nx, d2 = c2 + 1;
+      if (!(keep[a] && keep[b] && keep[c2] && keep[d2])) {
+        // partial cells: keep whichever triangles are fully present
+        if (keep[a] && keep[c2] && keep[b]) { idx.push(front[a], front[c2], front[b], back[a], back[b], back[c2]); }
+        if (keep[b] && keep[c2] && keep[d2]) { idx.push(front[b], front[c2], front[d2], back[b], back[d2], back[c2]); }
+        continue;
+      }
+      if (vh[a] + vh[b] + vh[c2] + vh[d2] === 0) continue;   // fully on the outline: nothing to draw
+      idx.push(front[a], front[c2], front[b], front[b], front[c2], front[d2]);
+      idx.push(back[a], back[b], back[c2], back[b], back[d2], back[c2]);
+    }
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.Float32BufferAttribute(P, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    geo.computeBoundingBox();
+    const bb = geo.boundingBox, cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2;
+    geo.translate(-cx, -cy, 0);
+    geo.userData = { cx, cy, w: (W - 2 * pad) * scale };
+    wordGeoCache.set(text, geo);
+    return geo;
+  }
+
+  H.bubbles = (el, words, { onHit } = {}) => {
     const canvas = document.createElement('canvas');
     canvas.className = 'live3d'; canvas.setAttribute('aria-hidden', 'true');
     el.append(canvas);
@@ -307,13 +389,10 @@
     const scene = new T.Scene();
     const cam = new T.OrthographicCamera(-1, 1, 1, -1, -2000, 2000); cam.position.z = 1000;
     const group = new T.Group(); scene.add(group);
-    const meta = font(fontName).data, asc = meta.ascender * SIZE / 1000;
-    let letters = [], W = 0, Hh = 0, px = 100, lineH = SIZE * 1.24, view = { l: 0, r: 1, t: 1, b: 0 };
+    let items = [], W = 0, Hh = 0, px = 100, lineH = SIZE * 1.18, view = { l: 0, r: 1, t: 1, b: 0 };
     const allMats = [];
     const ray = new T.Raycaster(), ptr = new T.Vector2(-9, -9);
     let hover = null, tx = 0, ty = 0, t0 = performance.now();
-
-    // free-floating little bubbles (like the loose bubbles in the reference)
     const sphere = new T.SphereGeometry(1, MOBILE ? 18 : 28, MOBILE ? 14 : 20);
     const floaters = [], pops = [];
     const floaterMat = () => { const m = bubbleMat('#bfe6ee'); m.uniforms.uWob.value = 0; allMats.push(m); return m; };
@@ -324,69 +403,58 @@
       m.userData = { vy: 10 + Math.random() * 16, ph: Math.random() * 6.28, s };
       scene.add(m); floaters.push(m);
     };
-
+    const space = SIZE * .34;
     function layout() {
       px = parseFloat(getComputedStyle(el).fontSize) || 100;
       W = el.clientWidth;
       const maxW = W / px * SIZE;
-      const space = (font(fontName).data.glyphs[' '] || { ha: 260 }).ha * SIZE / 1000 * 1.7;
       const lines = [[]]; let lx = 0;
       words.forEach(w => {
-        const wW = [...w.text].reduce((s, ch) => s + glyphGeo(ch, fontName, BUBBLE_INFLATE).userData.adv * H.look.track, 0);
+        const g = inflatedWord(w.text), wW = g.userData.w;
         if (lx > 0 && lx + wW > maxW) { lines.push([]); lx = 0; }
-        lines[lines.length - 1].push({ ...w, x: lx }); lx += wW + space;
+        lines[lines.length - 1].push({ ...w, g, x: lx }); lx += wW + space;
       });
-      group.clear(); const old = letters; letters = [];
+      group.clear(); const old = items; items = [];
       lines.forEach((ln, li) => ln.forEach(w => {
-        let x = w.x;
-        [...w.text].forEach(ch => {
-          const g = glyphGeo(ch, fontName, BUBBLE_INFLATE);
-          if (ch.trim()) {
-            const n = letters.length, mat = bubbleMat(w.color); allMats.push(mat);
-            const m = new T.Mesh(g, mat);
-            const home = new T.Vector3(x + g.userData.cx, -li * lineH + g.userData.cy, 0);
-            // start low and scattered, like bubbles drifting up from below
-            const s = old[n] ? old[n].s : { ox: (Math.random() - .5) * 160, oy: -260 - Math.random() * 260, vx: 0, vy: 0, sc: .2, vsc: 0,
-              rz: (Math.random() - .5) * 1.2, vrz: 0, delay: n * .055, wob: 2.4, popT: -1 };
-            m.position.copy(home); group.add(m);
-            letters.push({ m, home, s, i: n });
-          }
-          x += g.userData.adv * H.look.track;
-        });
+        const n = items.length, mat = bubbleMat(w.color); allMats.push(mat);
+        const m = new T.Mesh(w.g, mat);
+        const home = new T.Vector3(w.x + w.g.userData.cx, -li * lineH + w.g.userData.cy, 0);
+        const s = old[n] ? old[n].s : { ox: (Math.random() - .5) * 120, oy: -300 - Math.random() * 200, vx: 0, vy: 0, sc: .25, vsc: 0,
+          rz: (Math.random() - .5) * .5, vrz: 0, delay: n * .12, wob: 2.2, popT: -1 };
+        m.position.copy(home); group.add(m);
+        items.push({ m, home, s, i: n });
       }));
-      Hh = Math.ceil(lines.length * lineH / SIZE * px + px * .5);
+      Hh = Math.ceil(lines.length * lineH / SIZE * px + px * .45);
       el.style.height = Hh + 'px';
       const oL = px * .15, oR = px * .5, oT = px * .3, oB = px * .4, u = SIZE / px;
       canvas.style.cssText = `left:${-oL}px;top:${-oT}px;width:${W + oL + oR}px;height:${Hh + oT + oB}px`;
       renderer.setPixelRatio(Math.min(MOBILE ? 1.5 : 2, devicePixelRatio || 1));
       renderer.setSize(W + oL + oR, Hh + oT + oB, false);
-      const top = asc + SIZE * .3, units = Hh / px * SIZE, x0 = -SIZE * .06;
+      const top = SIZE * 1.0, units = Hh / px * SIZE, x0 = -SIZE * .04;
       view = { l: x0 - oL * u, r: x0 + maxW + oR * u, t: top + oT * u, b: top - units - oB * u };
       Object.assign(cam, { left: view.l, right: view.r, top: view.t, bottom: view.b }); cam.updateProjectionMatrix();
       if (!floaters.length) for (let i = 0; i < (MOBILE ? 6 : 11); i++) spawnFloater(true);
     }
-
     const toLocal = e => { const r = canvas.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); tx = ptr.x; ty = ptr.y; };
-    const pick = () => { ray.setFromCamera(ptr, cam); const hit = ray.intersectObjects(group.children, false)[0]; return hit && letters.find(l => l.m === hit.object); };
+    const pick = () => { ray.setFromCamera(ptr, cam); const hit = ray.intersectObjects(group.children, false)[0]; return hit && items.find(l => l.m === hit.object); };
     const burst = (pos, n) => {
       for (let i = 0; i < n; i++) {
-        const m = new T.Mesh(sphere, floaterMat()), s = 2 + Math.random() * 6; m.scale.setScalar(s); m.position.copy(pos); m.position.z += 30;
-        const a = Math.random() * 6.28, sp = 60 + Math.random() * 120; m.userData = { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 60, life: 1 };
+        const m = new T.Mesh(sphere, floaterMat()), s = 2 + Math.random() * 7; m.scale.setScalar(s); m.position.copy(pos); m.position.x += (Math.random() - .5) * 120; m.position.z += 30;
+        const a = Math.random() * 6.28, sp = 60 + Math.random() * 140; m.userData = { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 70, life: 1 };
         scene.add(m); pops.push(m);
       }
     };
     el.addEventListener('pointermove', e => {
       toLocal(e); const l = pick();
-      if (l && l !== hover) { l.s.wob = 4; l.s.vsc += 1.5; onHit && onHit('hover', l); }
+      if (l && l !== hover) { l.s.wob = 3.4; l.s.vsc += 1.2; onHit && onHit('hover', l); }
       hover = l || null; el.style.cursor = l ? 'pointer' : '';
     });
     el.addEventListener('pointerleave', () => { hover = null; tx = ty = 0; ptr.set(-9, -9); });
     el.addEventListener('pointerdown', e => {
       toLocal(e); const l = pick(); if (!l || l.s.popT >= 0) return;
-      l.s.popT = 0; burst(l.m.getWorldPosition(new T.Vector3()), 9);   // pop! then it re-inflates
+      l.s.popT = 0; burst(l.m.getWorldPosition(new T.Vector3()), 14);
       onHit && onHit('pop', l);
     });
-
     let visible = true, raf = 0, last = performance.now(), running = false;
     new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible && running && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }).observe(el);
     function tick(now) {
@@ -396,24 +464,24 @@
       allMats.forEach(m => m.uniforms.uTime.value = t);
       group.rotation.y += ((reduce ? 0 : tx * .16) - group.rotation.y) * .05;
       group.rotation.x += ((reduce ? 0 : -ty * .12) - group.rotation.x) * .05;
-      letters.forEach(l => {
+      items.forEach(l => {
         const s = l.s;
         for (let left = elapsed; left > 1e-6; left -= 1 / 120) {
           const dt = Math.min(left, 1 / 120);
           if (t < s.delay) continue;
-          // soft, floaty springs: bubbles drift into place rather than snap
-          s.vx += (-38 * s.ox - 5 * s.vx) * dt; s.ox += s.vx * dt;
-          s.vy += (-38 * s.oy - 5 * s.vy) * dt; s.oy += s.vy * dt;
-          s.vrz += (-30 * s.rz - 4 * s.vrz) * dt; s.rz += s.vrz * dt;
+          s.vx += (-30 * s.ox - 4.5 * s.vx) * dt; s.ox += s.vx * dt;     // soft floaty drift into place
+          s.vy += (-30 * s.oy - 4.5 * s.vy) * dt; s.oy += s.vy * dt;
+          s.vrz += (-26 * s.rz - 4 * s.vrz) * dt; s.rz += s.vrz * dt;
           let target = 1;
-          if (s.popT >= 0) { s.popT += dt; target = s.popT < .08 ? 1.35 : s.popT < .7 ? 0 : 1; if (s.popT > 1.4) s.popT = -1; }
-          s.vsc += (-90 * (s.sc - target) - 7 * s.vsc) * dt; s.sc += s.vsc * dt;
-          s.wob += (.6 - s.wob) * dt * 1.5;
+          if (s.popT >= 0) { s.popT += dt; target = s.popT < .08 ? 1.25 : s.popT < .75 ? 0 : 1; if (s.popT > 1.6) s.popT = -1; }
+          s.vsc += (-80 * (s.sc - target) - 6.5 * s.vsc) * dt; s.sc += s.vsc * dt;
+          s.wob += (.55 - s.wob) * dt * 1.3;
         }
-        const ph = t * 1.1 + l.i * .7, floatY = reduce ? 0 : Math.sin(ph) * 5, sway = reduce ? 0 : Math.sin(ph * .8) * .05;
-        l.m.position.set(l.home.x + s.ox, l.home.y + s.oy + floatY, Math.sin(ph * .6) * 10);
+        const ph = t * 1.05 + l.i * .9, floatY = reduce ? 0 : Math.sin(ph) * 5, sway = reduce ? 0 : Math.sin(ph * .7) * .03;
+        l.m.position.set(l.home.x + s.ox, l.home.y + s.oy + floatY, Math.sin(ph * .6) * 8);
         l.m.rotation.z = s.rz + sway;
-        l.m.scale.setScalar(Math.max(.001, s.sc));
+        const br = reduce ? 0 : Math.sin(ph * 1.4) * .012;              // gentle breathing
+        l.m.scale.set(Math.max(.001, s.sc * (1 + br)), Math.max(.001, s.sc * (1 - br)), Math.max(.001, s.sc));
         l.m.material.uniforms.uWob.value = reduce ? 0 : s.wob;
         l.m.material.uniforms.uFade.value = Math.min(1, Math.max(0, s.sc));
       });
@@ -423,7 +491,7 @@
         if (f.position.y > view.t + 30) { f.position.y = view.b - 20; f.position.x = view.l + Math.random() * (view.r - view.l); }
       });
       for (let i = pops.length - 1; i >= 0; i--) {
-        const p = pops[i], d = p.userData; d.life -= elapsed * 1.4; d.vy -= 40 * elapsed;
+        const p = pops[i], d = p.userData; d.life -= elapsed * 1.3; d.vy -= 40 * elapsed;
         p.position.x += d.vx * elapsed; p.position.y += d.vy * elapsed; p.material.uniforms.uFade.value = Math.max(0, d.life);
         if (d.life <= 0) { scene.remove(p); p.material.dispose(); allMats.splice(allMats.indexOf(p.material), 1); pops.splice(i, 1); }
       }
@@ -436,7 +504,7 @@
     return {
       start() { running = true; last = t0 = performance.now(); if (!raf) raf = requestAnimationFrame(tick); },
       relayout: layout,
-      jiggle() { letters.forEach((l, i) => setTimeout(() => { l.s.vy += 120; l.s.wob = 4; }, i * 35)); }
+      jiggle() { items.forEach((l, i) => setTimeout(() => { l.s.vy += 120; l.s.wob = 3.4; }, i * 60)); }
     };
   };
 

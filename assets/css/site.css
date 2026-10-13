@@ -748,3 +748,88 @@ h2.t-ready{line-height:1.36}   /* inflated 3D words need roomier lines when a he
   .tilt{transform:none!important}
   .svc:hover,.feat:hover,.pcard:hover,.post:hover,.ev:hover,.why:hover{transform:none}
 }
+
+/* =========================================================
+   v5 — reviews, uncropped images, clock fix, party transitions, trophy stage
+   ========================================================= */
+/* ---------- reviews ---------- */
+.rv{margin:0;flex:0 0 340px;padding:22px 22px 18px;border-radius:24px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 30px -18px rgba(82,16,52,.25);display:flex;flex-direction:column;gap:12px;text-align:left}
+.rv .stars{color:#f5a623;letter-spacing:3px;font-size:18px}
+.rv blockquote{font-size:16.5px;line-height:1.55;color:var(--ink);flex:1;margin:0;padding:0;background:none;border:0}
+.rv figcaption{display:flex;align-items:center;gap:10px;font-size:14px}
+.rv figcaption .av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--plum-soft);color:var(--plum);font:700 16px var(--font-d);flex:none}
+.rv figcaption b{display:block;color:var(--ink)}
+.rv figcaption small{color:var(--ink-2)}
+.rv .src{margin-left:auto;font-size:12.5px;color:var(--teal-d);text-decoration:none;white-space:nowrap}
+.rv .src:hover{text-decoration:underline}
+.rv-marquee{display:grid;gap:16px;margin-top:34px;overflow:hidden;mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);padding:10px 0}
+.rv-row{overflow:visible}
+.rv-track{display:flex;gap:16px;width:max-content;animation:rvScroll 70s linear infinite}
+.rv-row.rev .rv-track{animation-direction:reverse;animation-duration:80s}
+.rv-marquee:hover .rv-track{animation-play-state:paused}
+.rv-track .rv{transition:transform .5s var(--spring)}
+.rv-track .rv:hover{transform:translateY(-6px) rotate(-1deg)}
+@keyframes rvScroll{to{transform:translateX(-50%)}}
+.rv-grid{columns:3 300px;column-gap:16px;margin-top:28px}
+.rv-grid .rv{break-inside:avoid;margin-bottom:16px;display:flex}
+@media (max-width:640px){.rv{flex-basis:280px;padding:18px}.rv blockquote{font-size:15.5px}}
+
+/* ---------- never crop photos ---------- */
+.photo-card{aspect-ratio:auto}
+.photo-card img{height:auto;object-fit:contain;display:block}
+.gallery{display:block;columns:3 240px;column-gap:16px}
+.gallery figure{aspect-ratio:auto!important;break-inside:avoid;margin:0 0 16px;display:block}
+.gallery img{height:auto;object-fit:contain}
+.gallery figcaption{position:static;margin:0;border-radius:0 0 18px 18px;background:var(--card);border-top:1px solid var(--line)}
+.post img{height:auto;max-height:200px;object-fit:contain;background:var(--bg-2)}
+.story-img img{height:auto}
+/* hero photo: a full rounded photo instead of a circle crop */
+.hero-art{aspect-ratio:auto;display:flex;align-items:center;justify-content:center;padding:6% 0}
+.hero-art .blob{position:relative;inset:auto;width:100%;border-radius:40px;animation:softMorph 9s ease-in-out infinite;rotate:2deg}
+.hero-art .blob img{width:100%;height:auto;object-fit:contain;scale:1}
+@keyframes softMorph{50%{border-radius:56px 34px 52px 30px;rotate:-1deg}}
+.hero-art .orbit{display:none}
+.f1{left:-4%;top:2%}.f2{right:-3%;top:auto;bottom:24%}.f3{left:2%;bottom:-2%}
+
+/* ---------- "a day at the playground": clock always on its own line ---------- */
+.day-head{flex-direction:column;align-items:flex-start;gap:8px;flex-wrap:nowrap}
+.day-head .clock{min-width:7.2ch}
+
+/* ---------- party transition: rays, orbiting toys, bubbles, paw trail ---------- */
+.stage{position:relative;width:240px;height:190px;display:flex;align-items:flex-end;justify-content:center}
+.stage .rays{position:absolute;left:50%;top:50%;width:520px;height:520px;translate:-50% -50%;border-radius:50%;
+  background:repeating-conic-gradient(var(--ray,rgba(255,255,255,.13)) 0 9deg,transparent 9deg 18deg);
+  -webkit-mask:radial-gradient(circle,#000 18%,transparent 66%);mask:radial-gradient(circle,#000 18%,transparent 66%);animation:spin 14s linear infinite}
+.stage .ring{position:absolute;left:50%;top:44%;width:0;height:0;animation:spin 5s linear infinite}
+.stage .ring span{position:absolute;left:0;top:0;font-size:30px;line-height:1;translate:-50% -50%;transform:rotate(var(--a)) translateX(118px) rotate(calc(-1 * var(--a)))}
+.stage .ring span i{display:block;font-style:normal;animation:spinBack 5s linear infinite}
+@keyframes spinBack{to{rotate:-360deg}}
+.stage .dog{position:relative;z-index:1}
+.fx{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.fx .b{position:absolute;bottom:-60px;width:var(--s);height:var(--s);border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.95),rgba(255,255,255,.15) 30%,rgba(159,208,220,.25) 60%,rgba(247,141,167,.45));
+  box-shadow:inset 0 0 6px rgba(255,255,255,.6);animation:rise var(--d) linear infinite;animation-delay:var(--dl);left:var(--x);opacity:.75}
+.fx .pw{position:absolute;font-size:26px;opacity:0;animation:pawStep 2.4s linear infinite;animation-delay:var(--dl);left:var(--x);bottom:var(--y);rotate:var(--r)}
+@keyframes pawStep{0%,8%{opacity:0;scale:.6}14%{opacity:.85;scale:1}55%{opacity:.85}75%,100%{opacity:0}}
+.ld .tag{margin-top:14px;font:600 17px var(--font-d);color:#fff;opacity:.92;min-height:1.4em}
+#loader:not(.quick){--ray:rgba(194,58,140,.08)}
+#loader:not(.quick) .ld .tag{display:none}
+#loader:not(.quick) .fx .b{background:radial-gradient(circle at 32% 28%,#fff,rgba(255,255,255,.2) 30%,rgba(31,178,201,.18) 60%,rgba(194,58,140,.3))}
+#loader:not(.quick) .fx .pw{filter:hue-rotate(0)}
+@media (max-width:640px){.stage{width:200px;height:160px}.stage .ring span{transform:rotate(var(--a)) translateX(92px) rotate(calc(-1 * var(--a)));font-size:24px}.stage .rays{width:380px;height:380px}}
+
+/* ---------- trophy stage ---------- */
+.trophy-sec{padding-top:10px}
+.trophy-stage{position:relative;border-radius:44px;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#3a0f2a 0%,#1d0715 55%,#12040d 100%);color:#fff;display:grid;grid-template-columns:1.05fr .95fr;align-items:center;min-height:540px;box-shadow:var(--shadow)}
+.trophy-stage .t3d>canvas{display:block;width:100%;height:100%;min-height:540px}
+.trophy-stage .t3d{position:relative;height:100%;min-height:540px;cursor:pointer}
+.trophy-stage .copy{padding:48px 48px 48px 10px}
+.trophy-stage .eyebrow{color:var(--butter)}
+.trophy-stage h2{color:#fff;margin:12px 0 14px}
+.trophy-stage p{font-size:19px;opacity:.88;max-width:440px}
+.trophy-stage .years{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+.trophy-stage .years span{padding:8px 14px;border-radius:999px;background:rgba(255,215,120,.12);border:1px solid rgba(255,215,120,.35);color:#ffd77a;font:600 15px var(--font-d);opacity:0;transform:translateY(12px) scale(.8);transition:all .5s var(--spring)}
+.trophy-stage.lit .years span{opacity:1;transform:none}
+.trophy-stage .hint{position:absolute;left:24px;bottom:18px;font-size:13px;opacity:.55}
+.trophy-stage .fallback{position:absolute;inset:0;display:grid;place-items:center;font-size:150px}
+@media (max-width:900px){.trophy-stage{grid-template-columns:1fr;min-height:0}.trophy-stage .t3d,.trophy-stage .t3d>canvas{min-height:380px;height:380px}.trophy-stage .copy{padding:6px 26px 34px}}
