@@ -308,9 +308,9 @@
      hop section to section; click it to open the big wheel: every section sits around the rim — drag around the
      ring to scrub through the page, or tap a stop to jump straight there. */
   on('#about', () => {
-    const STOPS = [['top', '🏰', 'Welcome'], ['about', '🐾', 'About us'], ['trophy', '🏆', 'Voted best 6×'], ['services', '🛎️', 'Services'],
-      ['why', '💜', 'Why us'], ['pricing', '🏷️', 'Pricing'], ['day', '☀️', 'A day here'], ['plan', '🧮', 'Plan a stay'],
-      ['new-clients', '📋', 'New clients'], ['staff', '👋', 'Meet the pack'], ['reviews', '⭐', 'Reviews'], ['instagram', '📸', 'Instagram'],
+    const STOPS = [['top', '🏰', 'Welcome'], ['about', '🐾', 'About us'], ['instagram', '📸', 'Instagram'], ['trophy', '🏆', 'Voted best 6×'],
+      ['services', '🛎️', 'Services'], ['why', '💜', 'Why us'], ['pricing', '🏷️', 'Pricing'], ['day', '☀️', 'A day here'],
+      ['plan', '🧮', 'Plan a stay'], ['new-clients', '📋', 'New clients'], ['staff', '👋', 'Meet the pack'], ['reviews', '⭐', 'Reviews'],
       ['story', '📖', 'Our story'], ['events', '🎉', 'Events'], ['webcams', '🎥', 'Webcams'], ['locations', '📍', 'Locations'],
       ['faq', '❓', 'FAQ'], ['cta', '📅', 'Book a stay']]
       .map(([id, e, label]) => ({ id, e, label, el: document.getElementById(id) })).filter(s => s.el);
