@@ -485,7 +485,7 @@
     };
     el.addEventListener('pointermove', e => {
       toLocal(e); const l = pick();
-      if (l && l !== hover) { l.s.wob = 2.4; l.s.vsc += 1.2; onHit && onHit('hover', l); }
+      if (l && l !== hover && l.s.popT < 0) { l.s.wob = 2.4; l.s.vsc += 1.2; onHit && onHit('hover', l); }   // no bloop over a popping word
       hover = l || null; el.classList.toggle('hot', !!l);
     });
     el.addEventListener('pointerleave', () => { hover = null; tx = ty = 0; ptr.set(-9, -9); });
