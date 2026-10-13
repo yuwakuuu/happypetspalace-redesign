@@ -1,4 +1,4 @@
-/* Duke — the bulldog concierge.
+/* Duke — the pup concierge.
    Answers FAQs from the Palace's published policies, runs guided booking + pre-screen scheduling,
    and hands off to MoeGo booking / email / phone. No server needed.
 
@@ -282,7 +282,7 @@
     { k: [/\bforms?\b|paperwork|waiver|sign.?up|register/], a: '📝 You’ll need a <b>Client Profile</b>, <b>Pet Profile</b> and <b>Waiver & Release</b>. <a href="new-clients.html">Start new client sign-up →</a>' },
     { k: [/event|meetup|meet up|dog park|social|saturday/], a: '🎉 <b>Free Saturday meetups</b> start Nov 21 at Ruff Ranch Dog Park (Painted Sky Park, Apache Junction):<ul><li>8–9:30 AM Toy Breeds (up to 20 lb)</li><li>10–11:30 AM Featured Breed Group</li><li>12–1:30 PM Large-Breed Puppy Social (under 6mo)</li></ul>You stay with your dog. <a href="events.html">Details →</a>' },
     { k: [/train|akc|obedien|class|manners/], a: '🎓 We offer <b>AKC training courses</b> plus our Canine Enrichment daycare program. <a href="dog-training.html">See courses →</a>' },
-    { k: [/spa|bath|groom|nail|wash/], a: '🛁 Our spa does baths and grooming. <a href="spa.html">See spa prices →</a> or call ' + HPP.phone + '.' },
+    { k: [/spa|bath|groom|nail|wash|de-?shed|doodle|facial/], a: '🛁 Spa services are added to a daycare or boarding day. Baths by weight:<ul><li><b>Dog bath</b> $35 (≤20 lb) · $45 (≤40) · $60 (≤80) · $70 (≤95) · $80 (95+)</li><li><b>Doodle bath</b> $55 · $65 · $85 · $115 · inquire</li><li><b>De-shed bath</b> $55 · $80 · $110 · $125 · $140</li></ul>Nail trim $20 · teeth brushing $10 · blueberry facial $15 · paw balm $15. Coat condition can affect price. <a href="spa.html">Full spa menu →</a>' },
     { k: [/\brv\b|camper|road trip|adventure/], a: '🚐 Yes, we rent an <b>Adventure RV</b>! <a href="adventure-rv.html">Learn more →</a>' },
     { k: [/portrait|photo|picture/], a: '📸 Our <b>Portrait Studio</b> does seasonal shoots. <a href="portrait-studio.html">See the studio →</a>' },
     { k: [/academy|career|job|hiring|work (here|for you)|employ/], a: '🏅 Check out our <b>Pet Professional Academy</b> for pet-care careers. <a href="pet-professional-academy.html">Learn more →</a>' },

@@ -113,7 +113,7 @@ h2 .s{font-family:var(--font-s);font-weight:400;color:var(--teal);font-size:.9em
 /* ---------- marquee ---------- */
 .mq{overflow:hidden;padding:24px 0}
 .marquee{background:var(--teal-d);color:#fff;padding:20px 0;overflow:hidden;rotate:-1.5deg;margin:0 -20px;box-shadow:var(--shadow)}
-.marquee.alt{background:var(--plum);rotate:1.5deg;margin-top:-14px}
+.marquee.alt{background:var(--plum);rotate:-1.5deg;margin-top:10px}   /* parallel strips so neither hides the other's text */
 .track{display:flex;gap:44px;width:max-content;animation:scroll 34s linear infinite;font:600 clamp(22px,3vw,36px) var(--font-d);white-space:nowrap;align-items:center}
 .marquee.alt .track{animation-direction:reverse}
 .track i{font-style:normal;opacity:.6}
@@ -622,7 +622,7 @@ body>main,body>footer,body>.topbar{position:relative;z-index:1}
 .hours-mini{width:100%;font-size:15px;border-collapse:collapse}
 .hours-mini td{padding:6px 0;border-bottom:1px dashed var(--line)}
 .hours-mini td:last-child{text-align:right;color:var(--ink-2)}
-.sec-alt{background:var(--bg-2)}
+.sec-alt{background:transparent}   /* pure white pages; cards carry the separation */
 .nav .menu a[aria-current="page"],.nav .menu button.cur{background:var(--plum-soft);color:var(--plum)}
 @media (max-width:1080px){.split,.book-shell,.page-hero .hero-grid{grid-template-columns:1fr}.split.rev>:first-child{order:0}.feat-grid,.gallery{grid-template-columns:1fr 1fr}.book-side{position:static}}
 @media (max-width:640px){.feat-grid,.gallery{grid-template-columns:1fr}.post{grid-template-columns:1fr}.post img{width:100%;height:180px}.cta-band{padding:36px 24px;border-radius:28px}.ptable th,.ptable td{padding:12px 14px}}
@@ -638,3 +638,23 @@ body>main,body>footer,body>.topbar{position:relative;z-index:1}
 .book-side .ctas{gap:8px}
 .page-hero .badge{margin-top:18px}
 a.feat{color:inherit}
+
+/* ---------- chat button: original line-art pup ---------- */
+.dog-fab{background:linear-gradient(145deg,#6b1746,#521034);box-shadow:0 14px 34px -8px rgba(82,16,52,.6)}
+.dog-fab::before{border-color:var(--teal)}
+.dog-fab .pup-ico{width:62px;height:62px;overflow:visible}
+.chat-head .av{background:linear-gradient(145deg,#6b1746,#521034);box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.chat-head .av .pup-ico{width:42px;height:42px}
+.pp-head{transform-origin:50px 55px;transition:transform .5s var(--spring)}
+.dog-fab:hover .pp-head{transform:rotate(-10deg) scale(1.05)}
+.pp-ear-l{transform-origin:33px 27px;animation:ppEarL 4s ease-in-out infinite}
+.pp-ear-r{transform-origin:67px 27px;animation:ppEarR 4s ease-in-out infinite}
+@keyframes ppEarL{0%,78%,100%{transform:rotate(0)}84%{transform:rotate(14deg)}90%{transform:rotate(-5deg)}}
+@keyframes ppEarR{0%,80%,100%{transform:rotate(0)}86%{transform:rotate(-14deg)}92%{transform:rotate(5deg)}}
+.pp-eyes{transform-origin:50px 44px;animation:blink 5s infinite}
+.pp-tongue{transform-origin:50px 64px;transform:scaleY(0);transition:transform .4s var(--spring)}
+.dog-fab:hover .pp-tongue,.dog-fab.talk .pp-tongue,.chat-head .pp-tongue{transform:scaleY(1)}
+.pp-crown{transform-origin:50px 18px;animation:crown 3s ease-in-out infinite}
+@media (max-width:640px){.dog-fab .pup-ico{width:54px;height:54px}}
+h2.t-ready{line-height:1.36}   /* inflated 3D words need roomier lines when a heading wraps */
+[hidden]{display:none!important}   /* never let a display rule un-hide something */

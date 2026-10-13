@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/site.css?v={{v}}">
 <script>try{var t=localStorage.getItem('hpp-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <!-- 3D lettering: three.js r147 classic build (works when the site is opened straight from disk) -->
 <script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
@@ -17,12 +17,12 @@
 <script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/BufferGeometryUtils.js"></script>
-<script defer src="assets/fonts/fredoka.js"></script>
-<script defer src="assets/js/sfx.js"></script>
-<script defer src="assets/js/puffy3d.js"></script>
-<script defer src="assets/js/fur.js"></script>
-<script defer src="assets/js/core.js"></script>
-<script defer src="assets/js/chat.js"></script>
+<script defer src="assets/fonts/fredoka.js?v={{v}}"></script>
+<script defer src="assets/js/sfx.js?v={{v}}"></script>
+<script defer src="assets/js/puffy3d.js?v={{v}}"></script>
+<script defer src="assets/js/fur.js?v={{v}}"></script>
+<script defer src="assets/js/core.js?v={{v}}"></script>
+<script defer src="assets/js/chat.js?v={{v}}"></script>
 </head>
 <body data-page="{{page}}">
 <div id="loader" role="status" aria-label="Loading">
@@ -144,13 +144,13 @@
   </div>
 </footer>
 
-<button class="dog-fab" id="dogFab" aria-label="Chat with Duke, our bulldog concierge" aria-expanded="false" aria-controls="chat">
+<button class="dog-fab" id="dogFab" aria-label="Chat with Duke, our pup concierge" aria-expanded="false" aria-controls="chat">
   <span class="nudge" id="nudge">Woof! Need help booking? 🐾</span>
-  {{bulldog}}
+  {{pup}}
 </button>
-<div class="chat" id="chat" role="dialog" aria-label="Duke the bulldog concierge" aria-modal="false">
+<div class="chat" id="chat" role="dialog" aria-label="Duke the pup concierge" aria-modal="false">
   <div class="chat-head">
-    <span class="av">{{bulldog}}</span>
+    <span class="av">{{pup}}</span>
     <div><h3>Duke</h3><small><span class="dot"></span>Palace concierge · FAQ, booking &amp; scheduling</small></div>
     <button class="x" id="chatReset" aria-label="Start over" title="Start over">↺</button>
     <button class="x" id="chatClose" aria-label="Close chat" style="margin-left:6px">✕</button>

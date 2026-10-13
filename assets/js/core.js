@@ -178,14 +178,16 @@
   /* ================= 3D puffy + fur headings ================= */
   const H3 = window.HPP3D || {};
   const can3d = !!H3.ok, canFur = !!H3.fur;
-  /** split a heading into words; text -> puffy 3D, <span class="s"> -> fluffy fur */
+  /** split a heading into words; text -> puffy 3D, <span class="s"> -> accent-coloured 3D,
+      <span class="s fluffy"> -> fluffy fur (used sparingly, only where "fluffy" means something) */
   const wordsOf = h => {
     const out = [];
     h.childNodes.forEach(n => {
-      const fur = n.nodeType === 1 && n.classList.contains('s');
+      const accent = n.nodeType === 1 && n.classList.contains('s');
+      const fur = accent && n.classList.contains('fluffy');
       const txt = (n.textContent || '').trim();
       if (!txt) return;
-      txt.split(/\s+/).forEach(w => out.push({ w, fur }));
+      txt.split(/\s+/).forEach(w => out.push({ w, fur, accent }));
     });
     return out;
   };
@@ -193,7 +195,7 @@
     const s = document.createElement('span'); s.className = cls; s.setAttribute('aria-hidden', 'true'); s.dataset.word = word;
     const cv = r.canvas; cv.style.cssText = `display:block;width:${r.em.w}em;height:${r.em.h}em`;
     const e = r.em, top = Math.max(0, e.h - e.base - .95), bot = Math.max(0, e.base - .24);
-    s.style.margin = `-${top.toFixed(3)}em -${(e.padR * .85).toFixed(3)}em -${bot.toFixed(3)}em -${(e.padL * .85).toFixed(3)}em`;
+    s.style.margin = `-${top.toFixed(3)}em -${(e.padR * .72).toFixed(3)}em -${bot.toFixed(3)}em -${(e.padL * .72).toFixed(3)}em`;
     s.style.verticalAlign = '-.24em';
     s.append(cv);
     return s;
@@ -202,15 +204,16 @@
     if (h.dataset.dressed || (!can3d && !canFur)) return;
     h.dataset.dressed = '1';
     const fs = parseFloat(getComputedStyle(h).fontSize) || 64, px = Math.max(80, Math.min(120, fs));
-    const color = (H3.colors || {})[h.dataset.color || 'plum'] || '#c23a8c', hue = h.dataset.fur || 'pink';
+    const C = H3.colors || {}, color = C[h.dataset.color || 'plum'] || '#c23a8c', hue = h.dataset.fur || 'pink';
+    const accentColor = C[h.dataset.accent || h.dataset.fur || 'teal'] || C.teal;
     const words = wordsOf(h); if (!words.length) return;
     const src = document.createElement('span'); src.className = 't-src'; src.textContent = h.textContent.trim().replace(/\s+/g, ' ');
     const parts = [];
-    for (const { w, fur } of words) {
+    for (const { w, fur, accent } of words) {
       let r = null;
-      try { r = fur && canFur ? H3.fur(w, { px, hue }) : can3d ? H3.word(w, { color, px }) : H3.fur(w, { px, hue }); } catch (err) { console.warn('title render', err); }
+      try { r = fur && canFur ? H3.fur(w, { px, hue }) : can3d ? H3.word(w, { color: accent ? accentColor : color, px }) : null; } catch (err) { console.warn('title render', err); }
       if (!r) return;   // give up gracefully, keep the plain heading
-      parts.push(placeWord(r, fur || !can3d ? 'wfur' : 'w3d', w), document.createTextNode(' '));
+      parts.push(placeWord(r, fur ? 'wfur' : 'w3d', w), document.createTextNode(' '));
     }
     h.textContent = ''; h.append(src, ...parts); h.classList.add('t-ready');
   };
@@ -258,7 +261,7 @@
           else if (kind === 'land' && lands++ % 2 === 0) sfx('land', .9 + (l.i % 6) * .05);
         }
       });
-      el.classList.add('on');
+      el.classList.add('on'); el._ctl = ctl;
       HPP.ready.then(() => setTimeout(() => ctl.start(), 120));
       el.addEventListener('dblclick', () => { ctl.jiggle(); sfx('boing', 1.2); });
     }).catch(err => console.warn('live title', err));
@@ -537,7 +540,7 @@
     const target = () => Math.round(innerWidth * innerHeight / (innerWidth < 700 ? 52000 : 34000));
     // seed the screen so it's already raining
     for (let i = 0; i < target(); i++) paws.push(make(Math.random() * W, Math.random() * Hh));
-    let last = performance.now(), running = false;
+    let last = performance.now();
     const frame = t => {
       const dt = Math.min(.05, (t - last) / 1000); last = t;
       ctx.clearRect(0, 0, W, Hh);
@@ -558,12 +561,11 @@
         if (p.y > Hh + 40 * dpr || p.a < .01 || p.x < -80 * dpr || p.x > W + 80 * dpr) paws.splice(i, 1);
       }
       if (falling < want && Math.random() < .5) paws.push(make(Math.random() * W, -30 * dpr));
-      if (!document.hidden) requestAnimationFrame(frame); else running = false;
+      requestAnimationFrame(frame);   // paused automatically by the browser when the tab is hidden
     };
     if (reduce) { paws.forEach(p => drawPaw(p.x, p.y, p.rot, p.s, p.a, p.color)); }
     else {
-      running = true; requestAnimationFrame(frame);
-      document.addEventListener('visibilitychange', () => { if (!document.hidden && !running) { running = true; last = performance.now(); requestAnimationFrame(frame); } });
+      requestAnimationFrame(frame);
     }
   });
 })();
