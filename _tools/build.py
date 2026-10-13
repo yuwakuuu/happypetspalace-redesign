@@ -12,18 +12,21 @@ Macros available inside pages:
     [[book_cta]]        "Ready to book?" band with both locations + phone
     [[book_buttons]]    the three booking buttons on their own
 """
-import html, pathlib, re
+import hashlib, html, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / '_src'
 layout = (SRC / 'layout.html').read_text(encoding='utf-8')
-bulldog = (SRC / 'bulldog.svg').read_text(encoding='utf-8').strip()
+bulldog = (SRC / 'bulldog.svg').read_text(encoding='utf-8').strip()   # loader mascot
+# cache-busting version: changes whenever any CSS/JS/font file changes
+VERSION = hashlib.md5(b''.join(p.read_bytes() for p in sorted((ROOT / 'assets').rglob('*')) if p.suffix in ('.css', '.js'))).hexdigest()[:8]
+pup = (SRC / 'pup.svg').read_text(encoding='utf-8').strip()           # chat button icon
 
 BOOK_BUTTONS = ('<a class="btn magnetic" href="book.html?loc=mesa">Book Mesa <span class="arrow">→</span></a>'
                 '<a class="btn teal magnetic" href="book.html?loc=chandler">Book Chandler <span class="arrow">→</span></a>'
                 '<a class="btn ghost magnetic" href="tel:+14802071852">📞 480-207-1852</a>')
 BOOK_CTA = f'''<section style="padding-top:20px"><div class="wrap"><div class="cta-band" data-reveal="scale">
-  <div><h2 data-color="white" data-fur="pink">Ready to <span class="s">book?</span></h2><p>Select your nearest location to reserve your spot — or ask Duke, our bulldog concierge.</p></div>
+  <div><h2 data-color="white" data-fur="pink">Ready to <span class="s">book?</span></h2><p>Select your nearest location to reserve your spot — or ask Duke, our pup concierge.</p></div>
   <div class="ctas"><a class="btn light magnetic" href="book.html?loc=mesa">Book Mesa <span class="arrow">→</span></a><a class="btn light magnetic" href="book.html?loc=chandler">Book Chandler <span class="arrow">→</span></a><a class="btn ghost magnetic" style="--c:#fff" href="tel:+14802071852">📞 Call</a></div>
 </div></div></section>'''
 
@@ -33,7 +36,7 @@ def attrs(s):
 def hero(a):
     plain = re.sub(r'<[^>]+>', '', a['title'])
     crumb = a.get('crumb', '')
-    crumbs = '<a href="index.html">Home</a><span>›</span>' + (f'<span>{crumb}</span><span>›</span>' if crumb else '') + f'<span>{plain}</span>'
+    crumbs = '<a href="index.html">Home</a><span>›</span>' + (f'<span>{crumb}</span><span>›</span>' if crumb else '') + f'<span>{a.get("here", plain)}</span>'
     ctas = a.get('ctas', BOOK_BUTTONS)
     img = ''
     if a.get('img'):
@@ -72,7 +75,7 @@ def build(page):
         out = out.replace('{{cur_%s}}' % key, ' aria-current="page"' if nav == key else '')
     out = (out.replace('{{doc_title}}', 'Happy Pets Palace' if name == 'index' else f'{title} | Happy Pets Palace')
               .replace('{{description}}', html.escape(meta.get('description', ''), quote=True))
-              .replace('{{page}}', name).replace('{{bulldog}}', bulldog).replace('{{body}}', text.strip()))
+              .replace('{{page}}', name).replace('{{bulldog}}', bulldog).replace('{{pup}}', pup).replace('{{v}}', VERSION).replace('{{body}}', text.strip()))
     (ROOT / f'{name}.html').write_text(out, encoding='utf-8')
     return name
 
