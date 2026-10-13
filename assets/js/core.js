@@ -143,6 +143,13 @@
     $$('#menu > li > button').forEach(b => b.addEventListener('click', () => { if (innerWidth <= 1080) b.parentNode.classList.toggle('x-open'); }));
   });
 
+  /* ================= paw cursor: closes into a grabbing fist while the mouse button is held ================= */
+  {
+    const root = document.documentElement, up = () => root.classList.remove('paw-down');
+    addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button === 0) root.classList.add('paw-down'); }, true);
+    addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true); addEventListener('blur', up); addEventListener('dragend', up);
+  }
+
   /* ================= page-to-page paw wipe ================= */
   const FUN_LINES = ['Fetching the fun…', 'Sniffing out the page…', 'Chasing bubbles…', 'Wagging over…', 'Zooming to the next yard…', 'Grabbing a squeaky toy…'];
   on('#wipe', wipe => {
