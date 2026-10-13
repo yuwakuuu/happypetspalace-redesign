@@ -57,7 +57,19 @@
     type: () => tone({ type: 'triangle', f0: 1500 + Math.random() * 400, dur: .02, vol: .025 }),
     tick: () => tone({ type: 'square', f0: 2400, dur: .012, vol: .015, q: 4000 }),
     bloop: (p = 1) => tone({ f0: 300 * p, f1: 620 * p, dur: .12, vol: .07, a: .02 }),                       // soft bubble wobble
-    bubblePop: (p = 1) => { noise({ dur: .06, vol: .18, f0: 3000 * p, f1: 1200 * p }); tone({ f0: 900 * p, f1: 1800 * p, dur: .05, vol: .1 }); [0, .07, .15].forEach((d, i) => tone({ type: 'sine', f0: (1200 + i * 300) * p, f1: (1700 + i * 250) * p, dur: .05, vol: .05, delay: .05 + d })); },
+    bubblePop: (p = 1) => {   // soap bubble: a sharp "tsk" of the film snapping, a quick falling "plip", then a fizz of droplets
+      const c = ctx(); if (!c) return; const t = c.currentTime + .005;
+      if (!noiseBuf) { noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+      const s = c.createBufferSource(), hp = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = noiseBuf; hp.type = 'highpass'; hp.frequency.value = 1900 * p;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.42, t + .002); g.gain.exponentialRampToValueAtTime(.0001, t + .035);
+      s.connect(hp); hp.connect(g); g.connect(master); s.start(t, Math.random() * .5); s.stop(t + .05);
+      const o = c.createOscillator(), og = c.createGain();
+      o.frequency.setValueAtTime(1500 * p, t); o.frequency.exponentialRampToValueAtTime(420 * p, t + .055);
+      og.gain.setValueAtTime(0, t); og.gain.linearRampToValueAtTime(.3, t + .003); og.gain.exponentialRampToValueAtTime(.0001, t + .07);
+      o.connect(og); og.connect(master); o.start(t); o.stop(t + .08);
+      [.05, .09, .14, .2].forEach((d, i) => tone({ f0: (2300 + Math.random() * 1400) * p, f1: (1500 + Math.random() * 600) * p, dur: .025, vol: .05 - i * .008, a: .002, delay: d }));
+    },
     open: () => { lib.squeak(); tone({ f0: 500, f1: 900, dur: .15, vol: .08, delay: .12 }); },
     close: () => tone({ f0: 700, f1: 300, dur: .14, vol: .08 }),
   };

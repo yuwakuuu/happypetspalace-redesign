@@ -577,7 +577,7 @@
     addEventListener('pointerleave', () => { mx = my = -1e4; });
     // click on empty background -> confetti of paws
     document.addEventListener('pointerdown', e => {
-      if (e.target.closest('a,button,input,select,textarea,label,summary,iframe,canvas,.chat,.w3d,.wfur,.member,.svc,.pcard,.ptable,.map')) return;
+      if (e.target.closest('a,button,input,select,textarea,label,summary,iframe,canvas,.chat,.w3d,.wfur,.live-title,.member,.svc,.pcard,.ptable,.map')) return;
       for (let i = 0; i < 9; i++) paws.push(make(e.clientX * dpr, e.clientY * dpr, true));
       sfx('pop', 1.1 + Math.random() * .3);
     });
