@@ -123,6 +123,20 @@
     const sync = () => { const s = window.HPPSfx ? HPPSfx.on : false; b.setAttribute('aria-pressed', s); b.textContent = s ? '🔊' : '🔈'; b.title = s ? 'Sound on' : 'Sound off'; };
     sync(); b.onclick = () => { window.HPPSfx && HPPSfx.toggle(); sync(); };
   });
+  on('#mus', b => {
+    const M = window.HPPMusic; if (!M) { b.hidden = true; return; }
+    const hint = $('#musicHint'); let hinted = false;
+    try { hinted = !!sessionStorage.getItem('hpp-music-hint'); } catch {}
+    M.subscribe(m => {
+      b.setAttribute('aria-pressed', m.on && m.playing); b.title = m.on ? (m.playing ? 'Music on — tap to mute' : 'Music will start on your first tap') : 'Music off';
+      if (m.playing && m.firstStart && !hinted && hint) {   // tell people once per visit, with an easy mute
+        hinted = true; try { sessionStorage.setItem('hpp-music-hint', '1'); } catch {}
+        hint.classList.add('show'); setTimeout(() => hint.classList.remove('show'), 5500);
+      }
+    });
+    b.onclick = e => { e.stopPropagation(); M.toggle(); };
+    on('#musicHintMute', m => m.onclick = () => { if (M.on) M.toggle(); hint.classList.remove('show'); });
+  });
   on('#burger', burger => {
     const menu = $('#menu');
     burger.onclick = () => { const o = menu.classList.toggle('open'); burger.setAttribute('aria-expanded', o); burger.textContent = o ? '✕' : '☰'; sfx('click'); };
@@ -254,9 +268,11 @@
     const job = fontsReady().then(() => {
       el.textContent = ''; el.append(src);
       let lands = 0;
-      const ctl = H3.live(el, words, {
+      const bubble = el.dataset.style === 'bubble' && H3.bubbles;
+      const ctl = (bubble ? H3.bubbles : H3.live)(el, words, {
         onHit(kind, l) {
-          if (kind === 'hover') sfx('pop', .8 + (l.i % 8) * .06);
+          if (kind === 'hover') sfx(bubble ? 'bloop' : 'pop', .8 + (l.i % 8) * .06);
+          else if (kind === 'pop') sfx('bubblePop', .9 + Math.random() * .3);
           else if (kind === 'click') sfx('boing', .85 + Math.random() * .3);
           else if (kind === 'land' && lands++ % 2 === 0) sfx('land', .9 + (l.i % 6) * .05);
         }

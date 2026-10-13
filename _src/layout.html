@@ -19,6 +19,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/BufferGeometryUtils.js"></script>
 <script defer src="assets/fonts/fredoka.js?v={{v}}"></script>
 <script defer src="assets/js/sfx.js?v={{v}}"></script>
+<script defer src="assets/js/music.js?v={{v}}"></script>
 <script defer src="assets/js/puffy3d.js?v={{v}}"></script>
 <script defer src="assets/js/fur.js?v={{v}}"></script>
 <script defer src="assets/js/core.js?v={{v}}"></script>
@@ -27,14 +28,14 @@
 <body data-page="{{page}}">
 <div id="loader" role="status" aria-label="Loading">
   <div class="ld">
-    <div class="pup">{{bulldog}}</div>
+    <div class="dog" aria-hidden="true">🐶</div>
     <div class="shadow"></div>
     <div class="bar"><i></i><b>🐾</b></div>
     <p>Fetching the fun…</p>
     <span class="pct">0%</span>
   </div>
 </div>
-<div id="wipe" aria-hidden="true"><span>🐾</span></div>
+<div id="wipe" aria-hidden="true"><div class="ld"><div class="dog">🐶</div><div class="shadow"></div></div></div>
 <canvas id="paws" aria-hidden="true"></canvas>
 <div id="progress"></div>
 
@@ -78,8 +79,10 @@
         <li><a href="reviews.html"><span class="em">⭐</span>Reviews</a></li>
       </ul></li>
     <li><a href="new-clients.html"{{cur_new}}>New Clients</a></li>
+    <li class="m-only"><a href="book.html">Book Now 🐾</a></li>
   </ul>
-  <button class="icon-btn snd" id="snd" aria-label="Toggle sound" aria-pressed="true">🔊</button>
+  <button class="icon-btn mus" id="mus" aria-label="Background music" aria-pressed="false" title="Background music"><span class="eq"><i></i><i></i><i></i><i></i></span></button>
+  <button class="icon-btn snd" id="snd" aria-label="Sound effects" aria-pressed="true">🔊</button>
   <button class="icon-btn" id="theme" aria-label="Toggle dark mode">🌙</button>
   <button class="icon-btn burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
   <div class="book-cta" style="position:relative">
@@ -146,11 +149,12 @@
 
 <button class="dog-fab" id="dogFab" aria-label="Chat with Duke, our pup concierge" aria-expanded="false" aria-controls="chat">
   <span class="nudge" id="nudge">Woof! Need help booking? 🐾</span>
-  {{pup}}
+  <span class="fab-dog" aria-hidden="true">🐶</span>
 </button>
+<div class="music-hint" id="musicHint" role="status">🎶 <span>Soft music is playing</span><button id="musicHintMute">Mute</button></div>
 <div class="chat" id="chat" role="dialog" aria-label="Duke the pup concierge" aria-modal="false">
   <div class="chat-head">
-    <span class="av">{{pup}}</span>
+    <span class="av" aria-hidden="true">🐶</span>
     <div><h3>Duke</h3><small><span class="dot"></span>Palace concierge · FAQ, booking &amp; scheduling</small></div>
     <button class="x" id="chatReset" aria-label="Start over" title="Start over">↺</button>
     <button class="x" id="chatClose" aria-label="Close chat" style="margin-left:6px">✕</button>

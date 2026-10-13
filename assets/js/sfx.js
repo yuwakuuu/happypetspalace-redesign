@@ -56,6 +56,8 @@
     sparkle: () => [1046, 1318, 1568, 2093].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: .16, vol: .07, delay: i * .07 })),
     type: () => tone({ type: 'triangle', f0: 1500 + Math.random() * 400, dur: .02, vol: .025 }),
     tick: () => tone({ type: 'square', f0: 2400, dur: .012, vol: .015, q: 4000 }),
+    bloop: (p = 1) => tone({ f0: 300 * p, f1: 620 * p, dur: .12, vol: .07, a: .02 }),                       // soft bubble wobble
+    bubblePop: (p = 1) => { noise({ dur: .06, vol: .18, f0: 3000 * p, f1: 1200 * p }); tone({ f0: 900 * p, f1: 1800 * p, dur: .05, vol: .1 }); [0, .07, .15].forEach((d, i) => tone({ type: 'sine', f0: (1200 + i * 300) * p, f1: (1700 + i * 250) * p, dur: .05, vol: .05, delay: .05 + d })); },
     open: () => { lib.squeak(); tone({ f0: 500, f1: 900, dur: .15, vol: .08, delay: .12 }); },
     close: () => tone({ f0: 700, f1: 300, dur: .14, vol: .08 }),
   };
