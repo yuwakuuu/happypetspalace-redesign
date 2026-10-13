@@ -13,7 +13,7 @@
     if (ac.state === 'suspended') ac.resume();
     return ac;
   };
-  const unlock = () => { unlocked = true; ctx(); };
+  const unlock = () => { unlocked = true; ctx(); setTimeout(() => loadBark(), 0); };
   addEventListener('pointerdown', unlock, { once: true, capture: true });
   addEventListener('keydown', unlock, { once: true, capture: true });
 
@@ -27,6 +27,17 @@
     node.connect(g); g.connect(master); env(g, t, a, vol, dur); o.start(t); o.stop(t + a + dur + .05);
   };
   let noiseBuf = null;
+  // decode the embedded bark recording once, on first use
+  let barkBuf = null, barkWait = null, barkLoading = false;
+  const loadBark = () => {
+    if (barkLoading || !window.HPP_BARK) { if (!window.HPP_BARK) barkBuf = false; return; }
+    barkLoading = true;
+    try {
+      const bin = atob(window.HPP_BARK.data), u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      ctx().decodeAudioData(u8.buffer).then(b => { barkBuf = b; if (barkWait) { const [p, n] = barkWait; barkWait = null; lib.bark(p, n); } }, () => { barkBuf = false; });
+    } catch { barkBuf = false; }
+  };
   const noiseBuffer = c => { if (!noiseBuf) { noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } return noiseBuf; };
   const noise = ({ dur = .4, vol = .12, f0 = 400, f1 = 2400, delay = 0 }) => {
     const c = ctx(); if (!c) return; const t = c.currentTime + delay;
@@ -74,7 +85,7 @@
       ag.gain.setValueAtTime(0, t); ag.gain.linearRampToValueAtTime(.09, t + .004); ag.gain.exponentialRampToValueAtTime(.0001, t + .05);
       air.connect(bp); bp.connect(ag); ag.connect(master); air.start(t, Math.random() * .8); air.stop(t + .06);
     },
-    bark: (p = 1, n = 1) => {   // a cute small-dog "arf": pitch swoops up then drops, shaped by dog-like vocal formants
+    synthBark: (p = 1, n = 1) => {   // fallback only: a synthesised small-dog "arf"
       const c = ctx(); if (!c) return;
       for (let k = 0; k < n; k++) {
         const t = c.currentTime + .01 + k * (.2 + Math.random() * .04), q = p * (1 + (Math.random() - .5) * .08), len = .13 + Math.random() * .03;
@@ -96,6 +107,22 @@
         bg.gain.setValueAtTime(0, t); bg.gain.linearRampToValueAtTime(.12, t + .006); bg.gain.exponentialRampToValueAtTime(.0001, t + .07);
         br.connect(bb); bb.connect(bg); bg.connect(master);
         [o, o2, rasp].forEach(x => { x.start(t); x.stop(t + len + .06); }); br.start(t, Math.random() * .5); br.stop(t + .08);
+      }
+    },
+    bark: (p = 1, n = 1) => {   // real recorded barks, pitched up into a little Pomeranian's yappy register
+      const c = ctx(); if (!c) return;
+      if (barkBuf === false) return lib.synthBark(p, n);
+      if (!barkBuf) { barkWait = [p, n]; loadBark(); return; }
+      const B = window.HPP_BARK, order = [0, 1, 2].sort(() => Math.random() - .5);
+      let t = c.currentTime + .01;
+      for (let k = 0; k < n; k++) {
+        const src = c.createBufferSource(), g = c.createGain(), hs = c.createBiquadFilter();
+        src.buffer = barkBuf; src.playbackRate.value = (1.36 + Math.random() * .12) * p;   // ~600-950 Hz voice: small and yippy
+        hs.type = 'highshelf'; hs.frequency.value = 3000; hs.gain.value = 2.5;           // a little extra sparkle
+        g.gain.value = .62 - k * .06;
+        src.connect(hs); hs.connect(g); g.connect(master);
+        src.start(t, B.segs[order[k % 3]], B.len);
+        t += B.len / src.playbackRate.value + .05 + Math.random() * .05;              // quick "arf-arf" rhythm
       }
     },
     open: () => { lib.squeak(); tone({ f0: 500, f1: 900, dur: .15, vol: .08, delay: .12 }); },

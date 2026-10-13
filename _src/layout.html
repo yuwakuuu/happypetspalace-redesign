@@ -6,19 +6,18 @@
 <title>{{doc_title}}</title>
 <meta name="description" content="{{description}}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/vendor/fonts/fonts.css?v={{v}}">
 <link rel="stylesheet" href="assets/css/site.css?v={{v}}">
 <script>try{var t=localStorage.getItem('hpp-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
-<!-- 3D lettering: three.js r147 classic build (works when the site is opened straight from disk) -->
-<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FontLoader.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/BufferGeometryUtils.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/math/MeshSurfaceSampler.js"></script>
+<!-- 3D lettering: three.js r147 classic build, bundled locally so the site works offline and from disk -->
+<script defer src="assets/vendor/three/three.min.js?v={{v}}"></script>
+<script defer src="assets/vendor/three/FontLoader.js?v={{v}}"></script>
+<script defer src="assets/vendor/three/TextGeometry.js?v={{v}}"></script>
+<script defer src="assets/vendor/three/RoomEnvironment.js?v={{v}}"></script>
+<script defer src="assets/vendor/three/BufferGeometryUtils.js?v={{v}}"></script>
+<script defer src="assets/vendor/three/MeshSurfaceSampler.js?v={{v}}"></script>
 <script defer src="assets/fonts/fredoka.js?v={{v}}"></script>
+<script defer src="assets/audio/bark.js?v={{v}}"></script>
 <script defer src="assets/js/sfx.js?v={{v}}"></script>
 <script defer src="assets/js/music.js?v={{v}}"></script>
 <script defer src="assets/js/puffy3d.js?v={{v}}"></script>
@@ -151,6 +150,7 @@
       </ul></div>
     </div>
     <div class="legal"><span>© <span id="yr"></span> Happy Pets Palace &amp; Playground®</span><span>1918 E McKellips Rd, Mesa · 1080 E Pecos Rd #16, Chandler</span></div>
+    <p class="credits">Bark sound adapted from “<a href="https://commons.wikimedia.org/wiki/File:Barking_of_a_dog.ogg" target="_blank" rel="noopener">Barking of a dog</a>” by Amada44, <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>.</p>
   </div>
 </footer>
 

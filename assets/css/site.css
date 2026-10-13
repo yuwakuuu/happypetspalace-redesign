@@ -941,3 +941,5 @@ h2.t-ready{line-height:1.36}   /* inflated 3D words need roomier lines when a he
   .nw-he{font-size:32px}.nw-hl{font-size:17px}.nw-hub em{display:none}
 }
 @media (prefers-reduced-motion:reduce){.nw-wheel,.nw-pop{transition:none}}
+footer .credits{margin:10px 0 0;font-size:12px;opacity:.6;text-align:center}
+footer .credits a{color:inherit}
