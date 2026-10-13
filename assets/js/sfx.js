@@ -13,7 +13,7 @@
     if (ac.state === 'suspended') ac.resume();
     return ac;
   };
-  const unlock = () => { unlocked = true; ctx(); setTimeout(() => loadBark(), 0); };
+  const unlock = () => { unlocked = true; ctx(); setTimeout(() => { loadBark(); loadPop(); }, 0); };
   addEventListener('pointerdown', unlock, { once: true, capture: true });
   addEventListener('keydown', unlock, { once: true, capture: true });
 
@@ -27,6 +27,33 @@
     node.connect(g); g.connect(master); env(g, t, a, vol, dur); o.start(t); o.stop(t + a + dur + .05);
   };
   let noiseBuf = null;
+  // the embedded bubble-pop recording: decoded once, then split into its individual pops (silence trimmed, volume levelled)
+  let popBuf = null, popHits = [], popWait = null, popLoading = false;
+  const loadPop = () => {
+    if (popLoading) return;
+    if (!window.HPP_POP) { popBuf = false; return; }
+    popLoading = true;
+    try {
+      const bin = atob(window.HPP_POP.data), u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      ctx().decodeAudioData(u8.buffer).then(b => {
+        const sr = b.sampleRate, W = Math.round(sr * .005), chs = [...Array(b.numberOfChannels)].map((_, i) => b.getChannelData(i));
+        const env = [];
+        for (let i = 0; i < b.length; i += W) { let m = 0; for (const ch of chs) for (let j = i, e = Math.min(b.length, i + W); j < e; j++) m = Math.max(m, Math.abs(ch[j])); env.push(m); }
+        const top = Math.max(...env); if (!top) { popBuf = false; return; }
+        for (let k = 0; k < env.length; k++) {
+          if (env[k] < top * .12) continue;
+          let s = k; while (s > 0 && env[s - 1] > top * .02 && k - s < 8) s--;           // back up to where it starts rising
+          let e = k, quiet = 0, peak = 0;
+          while (e < env.length && quiet < 12 && e - s < 120) { peak = Math.max(peak, env[e]); quiet = env[e] < top * .015 ? quiet + 1 : 0; e++; }
+          popHits.push({ at: Math.max(0, s * W / sr - .003), len: (e - quiet - s + 2) * W / sr, gain: Math.min(4, .85 / peak) });
+          k = e;
+        }
+        popBuf = popHits.length ? b : false;
+        if (popBuf && popWait) { const p = popWait; popWait = null; lib.bubblePop(p); }
+      }, () => { popBuf = false; });
+    } catch { popBuf = false; }
+  };
   // decode the embedded bark recording once, on first use
   let barkBuf = null, barkWait = null, barkLoading = false;
   const loadBark = () => {
@@ -69,7 +96,16 @@
     type: () => tone({ type: 'triangle', f0: 1500 + Math.random() * 400, dur: .02, vol: .025 }),
     tick: () => tone({ type: 'square', f0: 2400, dur: .012, vol: .015, q: 4000 }),
     bloop: (p = 1) => tone({ f0: 300 * p, f1: 620 * p, dur: .12, vol: .07, a: .02 }),                       // soft bubble wobble
-    bubblePop: (p = 1) => {   // a soap bubble going "pop!": crisp snap of the film + a quick rising "plop" + a puff of air
+    bubblePop: (p = 1) => {   // the real recorded pop (a random one, if the clip has several), with a hair of pitch variety
+      const c = ctx(); if (!c) return;
+      if (popBuf === false) return lib.synthPop(p);
+      if (!popBuf) { popWait = p; loadPop(); return; }
+      const h = popHits[Math.random() * popHits.length | 0], src = c.createBufferSource(), g = c.createGain();
+      src.buffer = popBuf; src.playbackRate.value = .94 + Math.max(0, p - .9) * .4;
+      g.gain.value = h.gain * .7;
+      src.connect(g); g.connect(master); src.start(c.currentTime + .004, h.at, h.len + .02);
+    },
+    synthPop: (p = 1) => {   // fallback only: a synthesised soap bubble going "pop!": crisp snap of the film + a quick rising "plop" + a puff of air
       const c = ctx(); if (!c) return; const t = c.currentTime + .004;
       const nb = noiseBuffer(c);
       const snap = c.createBufferSource(), hp = c.createBiquadFilter(), sg = c.createGain();
