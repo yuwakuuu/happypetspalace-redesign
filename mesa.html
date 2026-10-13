@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mesa Location | Happy Pets Palace</title>
+<meta name="description" content="Happy Pets Palace Mesa — dog boarding and daycare at 1918 East McKellips Road, Mesa, AZ 85203. Hours, directions, booking and contact.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+<script>try{var t=localStorage.getItem('hpp-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<!-- 3D lettering: three.js r147 classic build (works when the site is opened straight from disk) -->
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FontLoader.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/BufferGeometryUtils.js"></script>
+<script defer src="assets/fonts/fredoka.js"></script>
+<script defer src="assets/js/sfx.js"></script>
+<script defer src="assets/js/puffy3d.js"></script>
+<script defer src="assets/js/fur.js"></script>
+<script defer src="assets/js/core.js"></script>
+<script defer src="assets/js/chat.js"></script>
+</head>
+<body data-page="mesa">
+<div id="loader" role="status" aria-label="Loading">
+  <div class="ld">
+    <div class="pup"><svg viewBox="0 0 100 100" aria-hidden="true">
+    <g class="bd-head">
+      <g class="bd-ear-l"><path d="M30 30 Q12 20 10 40 Q18 44 30 40Z" fill="#7a4a2e"/><path d="M27 32 Q16 27 15 38 Q20 40 27 38Z" fill="#c98e74"/></g>
+      <g class="bd-ear-r"><path d="M70 30 Q88 20 90 40 Q82 44 70 40Z" fill="#7a4a2e"/><path d="M73 32 Q84 27 85 38 Q80 40 73 38Z" fill="#c98e74"/></g>
+      <path d="M50 22 C76 22 88 40 86 60 C84 80 68 90 50 90 C32 90 16 80 14 60 C12 40 24 22 50 22Z" fill="#e7b98c"/>
+      <path d="M44 24 Q50 21 56 24 L55 52 Q50 56 45 52Z" fill="#fff6ea"/>
+      <path d="M30 40 Q36 36 42 40 M58 40 Q64 36 70 40" stroke="#b07e5a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M40 30 Q50 27 60 30" stroke="#c99a74" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <g class="bd-eyes">
+        <circle cx="35" cy="49" r="6" fill="#2a1a12"/><circle cx="65" cy="49" r="6" fill="#2a1a12"/>
+        <circle cx="37" cy="47" r="2" fill="#fff"/><circle cx="67" cy="47" r="2" fill="#fff"/>
+      </g>
+      <ellipse cx="34" cy="71" rx="16" ry="12" fill="#fff6ea"/><ellipse cx="66" cy="71" rx="16" ry="12" fill="#fff6ea"/>
+      <circle cx="28" cy="68" r="1" fill="#b07e5a"/><circle cx="32" cy="72" r="1" fill="#b07e5a"/><circle cx="72" cy="68" r="1" fill="#b07e5a"/><circle cx="68" cy="72" r="1" fill="#b07e5a"/>
+      <path d="M40 60 Q50 54 60 60 Q58 66 50 67 Q42 66 40 60Z" fill="#2a1a12"/>
+      <ellipse cx="46" cy="59" rx="2.4" ry="1.3" fill="#5a4034"/>
+      <path class="bd-tongue" d="M45 76 Q45 86 50 86 Q55 86 55 76Z" fill="#f2738f"/>
+      <path d="M36 76 Q50 84 64 76" stroke="#2a1a12" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M41 77 L43 72 L45 78Z M55 78 L57 72 L59 77Z" fill="#fff"/>
+      <g class="bd-crown">
+        <path d="M37 22 L39 9 L45 16 L50 6 L55 16 L61 9 L63 22Z" fill="#9fd0dc" stroke="#521034" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="50" cy="16" r="2.2" fill="#521034"/><circle cx="42" cy="18" r="1.4" fill="#521034"/><circle cx="58" cy="18" r="1.4" fill="#521034"/>
+      </g>
+    </g></svg></div>
+    <div class="shadow"></div>
+    <div class="bar"><i></i><b>🐾</b></div>
+    <p>Fetching the fun…</p>
+    <span class="pct">0%</span>
+  </div>
+</div>
+<div id="wipe" aria-hidden="true"><span>🐾</span></div>
+<canvas id="paws" aria-hidden="true"></canvas>
+<div id="progress"></div>
+
+<div class="topbar">
+  <div class="wrap">
+    <span class="status"><span class="dot" id="topDot"></span><span id="topStatus">Checking hours…</span></span>
+    <a class="news" href="events.html"><b>NEW</b> Free Saturday dog park meetups start Nov 21 →</a>
+    <a href="tel:+14802071852">📞 480-207-1852</a>
+  </div>
+</div>
+
+<nav class="nav" id="nav" aria-label="Main">
+  <a class="logo" href="index.html" aria-label="Happy Pets Palace &amp; Playground home"><img src="assets/logo.png" alt="Happy Pets Palace &amp; Playground"></a>
+  <ul class="menu" id="menu">
+    <li><button aria-haspopup="true" class="cur">Locations <span class="caret">▼</span></button>
+      <ul class="drop">
+        <li><a href="mesa.html"><span class="em">📍</span>Mesa</a></li>
+        <li><a href="chandler.html"><span class="em">📍</span>Chandler</a></li>
+      </ul></li>
+    <li><button aria-haspopup="true">Services <span class="caret">▼</span></button>
+      <ul class="drop">
+        <li><a href="dog-boarding.html"><span class="em">🏰</span>Dog Boarding</a></li>
+        <li><a href="doggy-daycare.html"><span class="em">🎾</span>Doggy Daycare</a></li>
+        <li><a href="canine-enrichment.html"><span class="em">🧩</span>Canine Enrichment</a></li>
+        <li><a href="puppy-socializing.html"><span class="em">🐶</span>Puppy Socializing</a></li>
+        <li><a href="dog-training.html"><span class="em">🎓</span>Dog Training</a></li>
+        <li><a href="spa.html"><span class="em">🛁</span>Spa Services</a></li>
+        <li><a href="pet-professional-academy.html"><span class="em">🏅</span>Pet Professional Academy</a></li>
+        <li><a href="portrait-studio.html"><span class="em">📸</span>Portrait Studio</a></li>
+        <li><a href="adventure-rv.html"><span class="em">🚐</span>Adventure RV</a></li>
+      </ul></li>
+    <li><a href="index.html#pricing">Pricing</a></li>
+    <li><a href="events.html">Events</a></li>
+    <li><button aria-haspopup="true">About <span class="caret">▼</span></button>
+      <ul class="drop">
+        <li><a href="about.html"><span class="em">💜</span>About Us</a></li>
+        <li><a href="staff.html"><span class="em">👋</span>Our Staff</a></li>
+        <li><a href="webcams.html"><span class="em">📹</span>Live Webcams</a></li>
+        <li><a href="blog.html"><span class="em">📝</span>Blog</a></li>
+        <li><a href="faq.html"><span class="em">❓</span>FAQs</a></li>
+        <li><a href="reviews.html"><span class="em">⭐</span>Reviews</a></li>
+      </ul></li>
+    <li><a href="new-clients.html">New Clients</a></li>
+  </ul>
+  <button class="icon-btn snd" id="snd" aria-label="Toggle sound" aria-pressed="true">🔊</button>
+  <button class="icon-btn" id="theme" aria-label="Toggle dark mode">🌙</button>
+  <button class="icon-btn burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
+  <div class="book-cta" style="position:relative">
+    <ul class="menu" style="display:flex;margin:0"><li>
+      <button class="btn magnetic" aria-haspopup="true" style="padding:12px 20px">Book Now <span class="caret">▼</span></button>
+      <ul class="drop" style="left:auto;right:0;min-width:210px">
+        <li><a href="book.html?loc=mesa"><span class="em">🏰</span>Book Mesa</a></li>
+        <li><a href="book.html?loc=chandler"><span class="em">🏰</span>Book Chandler</a></li>
+        <li><a href="#" data-open-chat="book"><span class="em">🐶</span>Ask Duke to help</a></li>
+      </ul>
+    </li></ul>
+  </div>
+</nav>
+
+<main id="main">
+<header class="page-hero hero">
+  <div class="wrap hero-grid">
+    <div>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span>›</span><span>Locations</span><span>›</span><span>Happy Pets Mesa</span></nav>
+      <span class="badge" data-reveal style="margin-top:18px"><span class="trophy">📍</span>North Mesa · opened Aug 22, 2014</span>
+      <h1 class="live-title">Happy Pets <span class="s">Mesa</span></h1>
+      <p class="sub" data-reveal style="--i:3">An award-winning dog boarding and daycare center. Our Mesa location caters to all dog breeds.</p>
+      <div class="ctas" data-reveal style="--i:4"><a class="btn magnetic" href="book.html?loc=mesa">Book Mesa <span class="arrow">→</span></a><a class="btn teal magnetic" href="https://www.google.com/maps/dir/?api=1&amp;destination=1918+East+McKellips+Road+Mesa+AZ+85203" target="_blank" rel="noopener">🧭 Directions</a><a class="btn ghost magnetic" href="tel:+14802071852">📞 Call</a></div>
+    </div>
+    <div data-reveal="scale" style="--i:2"><div class="photo-card tilt"><img src="assets/img/loc-mesa.webp" alt="Happy Pets Palace Mesa"><span class="tag">📍 1918 East McKellips Road</span></div></div>
+  </div>
+</header>
+
+<section style="padding-top:20px">
+  <div class="wrap loc">
+    <div class="loc-info" data-reveal="left">
+      <span class="status" data-status><span class="dot"></span><span class="txt">Checking hours…</span></span>
+      <h3>Mesa</h3>
+      <address>1918 East McKellips Road<br>Mesa, AZ 85203</address>
+      <p class="near">Easy reach of Tempe, north Scottsdale and Apache Junction.</p>
+      <table class="hours" data-hours></table>
+      <p style="font-size:16px;color:var(--ink-2)">✉️ <a href="mailto:happypetspalacemesa@gmail.com">happypetspalacemesa@gmail.com</a><br>📞 <a href="tel:+14802071852">480-207-1852</a><br>👍 <a href="https://www.facebook.com/happypetspalacemesa" target="_blank" rel="noopener">Facebook</a> · 📷 <a href="https://www.instagram.com/happypetspalacemesa" target="_blank" rel="noopener">Instagram</a> · ⭐ <a href="reviews.html">Reviews</a></p>
+    </div>
+    <div class="map" data-reveal="scale"><iframe data-map="mesa" title="Map to Happy Pets Palace Mesa" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+  </div>
+</section>
+
+<section class="sec-alt">
+  <div class="wrap">
+    <span class="eyebrow" data-reveal>🐾 About Happy Pets Palace Mesa</span>
+    <h2 data-reveal>Fun, safe &amp; <span class="s">loved.</span></h2>
+    <div class="feat-grid">
+      <div class="feat" data-reveal><div class="e">🌳</div><h3>Indoor + outdoor</h3><p>A full day of fun in climate-controlled indoor and outdoor play areas.</p></div>
+      <div class="feat" data-reveal style="--i:1"><div class="e">⚖️</div><h3>Matched playmates</h3><p>Multiple play yards so dogs of similar size and temperament play together safely.</p></div>
+      <div class="feat" data-reveal style="--i:2"><div class="e">🌙</div><h3>Boarding perks</h3><p>Overnight potty breaks, daily story time and 24/7 live-stream webcams.</p></div>
+    </div>
+    <p class="lede" data-reveal style="margin-top:30px">We create a welcoming environment where pet owners feel confident their dogs are in safe, loving hands. Our trained staff is dedicated to the well-being of every animal. Mesa is where it all began in 2014 — and six years running, it has been voted Mesa’s Best Pet Boarding.</p>
+    <div class="ctas" style="margin-top:20px" data-reveal><a class="btn magnetic" href="dog-boarding.html">Dog boarding</a><a class="btn ghost magnetic" href="doggy-daycare.html">Doggy daycare</a><a class="btn ghost magnetic" href="chandler.html">Visit our Chandler location →</a></div>
+  </div>
+</section>
+
+<section style="padding-top:20px"><div class="wrap"><div class="cta-band" data-reveal="scale">
+  <div><h2 data-color="white" data-fur="pink">Ready to <span class="s">book?</span></h2><p>Select your nearest location to reserve your spot — or ask Duke, our bulldog concierge.</p></div>
+  <div class="ctas"><a class="btn light magnetic" href="book.html?loc=mesa">Book Mesa <span class="arrow">→</span></a><a class="btn light magnetic" href="book.html?loc=chandler">Book Chandler <span class="arrow">→</span></a><a class="btn ghost magnetic" style="--c:#fff" href="tel:+14802071852">📞 Call</a></div>
+</div></div></section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="logo" href="index.html" style="display:inline-flex"><img src="assets/logo.png" alt="Happy Pets Palace &amp; Playground"></a>
+        <p style="color:var(--ink-2);margin-top:14px;max-width:300px;font-size:16px">Dog boarding, daycare and grooming in Mesa and Chandler, Arizona. Six years running as Mesa's Best Pet Boarding.</p>
+        <div class="socials">
+          <a href="https://www.facebook.com/happypetspalacemesa" target="_blank" rel="noopener" aria-label="Facebook">f</a>
+          <a href="https://www.instagram.com/happypetspalacemesa" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+          <a href="https://www.youtube.com/channel/UCDkNALJrFr_xBVoTshVaLCw" target="_blank" rel="noopener" aria-label="YouTube">▶</a>
+        </div>
+      </div>
+      <div><h4>Services</h4><ul>
+        <li><a href="dog-boarding.html">Dog Boarding</a></li>
+        <li><a href="doggy-daycare.html">Doggy Daycare</a></li>
+        <li><a href="canine-enrichment.html">Canine Enrichment</a></li>
+        <li><a href="puppy-socializing.html">Puppy Socializing</a></li>
+        <li><a href="dog-training.html">Dog Training</a></li>
+        <li><a href="spa.html">Spa Services</a></li>
+      </ul></div>
+      <div><h4>More</h4><ul>
+        <li><a href="pet-professional-academy.html">Pet Professional Academy</a></li>
+        <li><a href="portrait-studio.html">Portrait Studio</a></li>
+        <li><a href="adventure-rv.html">Adventure RV</a></li>
+        <li><a href="events.html">Events</a></li>
+        <li><a href="blog.html">Blog</a></li>
+      </ul></div>
+      <div><h4>About</h4><ul>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="staff.html">Our Staff</a></li>
+        <li><a href="webcams.html">Live Webcams</a></li>
+        <li><a href="reviews.html">Reviews</a></li>
+        <li><a href="faq.html">FAQs</a></li>
+        <li><a href="new-clients.html">New Clients</a></li>
+      </ul></div>
+      <div><h4>Visit &amp; book</h4><ul>
+        <li><a href="mesa.html">Mesa location</a></li>
+        <li><a href="chandler.html">Chandler location</a></li>
+        <li><a href="book.html">Book online</a></li>
+        <li><a href="tel:+14802071852">480-207-1852</a></li>
+      </ul></div>
+    </div>
+    <div class="legal"><span>© <span id="yr"></span> Happy Pets Palace &amp; Playground®</span><span>1918 E McKellips Rd, Mesa · 1080 E Pecos Rd #16, Chandler</span></div>
+  </div>
+</footer>
+
+<button class="dog-fab" id="dogFab" aria-label="Chat with Duke, our bulldog concierge" aria-expanded="false" aria-controls="chat">
+  <span class="nudge" id="nudge">Woof! Need help booking? 🐾</span>
+  <svg viewBox="0 0 100 100" aria-hidden="true">
+    <g class="bd-head">
+      <g class="bd-ear-l"><path d="M30 30 Q12 20 10 40 Q18 44 30 40Z" fill="#7a4a2e"/><path d="M27 32 Q16 27 15 38 Q20 40 27 38Z" fill="#c98e74"/></g>
+      <g class="bd-ear-r"><path d="M70 30 Q88 20 90 40 Q82 44 70 40Z" fill="#7a4a2e"/><path d="M73 32 Q84 27 85 38 Q80 40 73 38Z" fill="#c98e74"/></g>
+      <path d="M50 22 C76 22 88 40 86 60 C84 80 68 90 50 90 C32 90 16 80 14 60 C12 40 24 22 50 22Z" fill="#e7b98c"/>
+      <path d="M44 24 Q50 21 56 24 L55 52 Q50 56 45 52Z" fill="#fff6ea"/>
+      <path d="M30 40 Q36 36 42 40 M58 40 Q64 36 70 40" stroke="#b07e5a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M40 30 Q50 27 60 30" stroke="#c99a74" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <g class="bd-eyes">
+        <circle cx="35" cy="49" r="6" fill="#2a1a12"/><circle cx="65" cy="49" r="6" fill="#2a1a12"/>
+        <circle cx="37" cy="47" r="2" fill="#fff"/><circle cx="67" cy="47" r="2" fill="#fff"/>
+      </g>
+      <ellipse cx="34" cy="71" rx="16" ry="12" fill="#fff6ea"/><ellipse cx="66" cy="71" rx="16" ry="12" fill="#fff6ea"/>
+      <circle cx="28" cy="68" r="1" fill="#b07e5a"/><circle cx="32" cy="72" r="1" fill="#b07e5a"/><circle cx="72" cy="68" r="1" fill="#b07e5a"/><circle cx="68" cy="72" r="1" fill="#b07e5a"/>
+      <path d="M40 60 Q50 54 60 60 Q58 66 50 67 Q42 66 40 60Z" fill="#2a1a12"/>
+      <ellipse cx="46" cy="59" rx="2.4" ry="1.3" fill="#5a4034"/>
+      <path class="bd-tongue" d="M45 76 Q45 86 50 86 Q55 86 55 76Z" fill="#f2738f"/>
+      <path d="M36 76 Q50 84 64 76" stroke="#2a1a12" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M41 77 L43 72 L45 78Z M55 78 L57 72 L59 77Z" fill="#fff"/>
+      <g class="bd-crown">
+        <path d="M37 22 L39 9 L45 16 L50 6 L55 16 L61 9 L63 22Z" fill="#9fd0dc" stroke="#521034" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="50" cy="16" r="2.2" fill="#521034"/><circle cx="42" cy="18" r="1.4" fill="#521034"/><circle cx="58" cy="18" r="1.4" fill="#521034"/>
+      </g>
+    </g></svg>
+</button>
+<div class="chat" id="chat" role="dialog" aria-label="Duke the bulldog concierge" aria-modal="false">
+  <div class="chat-head">
+    <span class="av"><svg viewBox="0 0 100 100" aria-hidden="true">
+    <g class="bd-head">
+      <g class="bd-ear-l"><path d="M30 30 Q12 20 10 40 Q18 44 30 40Z" fill="#7a4a2e"/><path d="M27 32 Q16 27 15 38 Q20 40 27 38Z" fill="#c98e74"/></g>
+      <g class="bd-ear-r"><path d="M70 30 Q88 20 90 40 Q82 44 70 40Z" fill="#7a4a2e"/><path d="M73 32 Q84 27 85 38 Q80 40 73 38Z" fill="#c98e74"/></g>
+      <path d="M50 22 C76 22 88 40 86 60 C84 80 68 90 50 90 C32 90 16 80 14 60 C12 40 24 22 50 22Z" fill="#e7b98c"/>
+      <path d="M44 24 Q50 21 56 24 L55 52 Q50 56 45 52Z" fill="#fff6ea"/>
+      <path d="M30 40 Q36 36 42 40 M58 40 Q64 36 70 40" stroke="#b07e5a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M40 30 Q50 27 60 30" stroke="#c99a74" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <g class="bd-eyes">
+        <circle cx="35" cy="49" r="6" fill="#2a1a12"/><circle cx="65" cy="49" r="6" fill="#2a1a12"/>
+        <circle cx="37" cy="47" r="2" fill="#fff"/><circle cx="67" cy="47" r="2" fill="#fff"/>
+      </g>
+      <ellipse cx="34" cy="71" rx="16" ry="12" fill="#fff6ea"/><ellipse cx="66" cy="71" rx="16" ry="12" fill="#fff6ea"/>
+      <circle cx="28" cy="68" r="1" fill="#b07e5a"/><circle cx="32" cy="72" r="1" fill="#b07e5a"/><circle cx="72" cy="68" r="1" fill="#b07e5a"/><circle cx="68" cy="72" r="1" fill="#b07e5a"/>
+      <path d="M40 60 Q50 54 60 60 Q58 66 50 67 Q42 66 40 60Z" fill="#2a1a12"/>
+      <ellipse cx="46" cy="59" rx="2.4" ry="1.3" fill="#5a4034"/>
+      <path class="bd-tongue" d="M45 76 Q45 86 50 86 Q55 86 55 76Z" fill="#f2738f"/>
+      <path d="M36 76 Q50 84 64 76" stroke="#2a1a12" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M41 77 L43 72 L45 78Z M55 78 L57 72 L59 77Z" fill="#fff"/>
+      <g class="bd-crown">
+        <path d="M37 22 L39 9 L45 16 L50 6 L55 16 L61 9 L63 22Z" fill="#9fd0dc" stroke="#521034" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="50" cy="16" r="2.2" fill="#521034"/><circle cx="42" cy="18" r="1.4" fill="#521034"/><circle cx="58" cy="18" r="1.4" fill="#521034"/>
+      </g>
+    </g></svg></span>
+    <div><h3>Duke</h3><small><span class="dot"></span>Palace concierge · FAQ, booking &amp; scheduling</small></div>
+    <button class="x" id="chatReset" aria-label="Start over" title="Start over">↺</button>
+    <button class="x" id="chatClose" aria-label="Close chat" style="margin-left:6px">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody" aria-live="polite"></div>
+  <div class="chat-foot">
+    <form id="chatForm" autocomplete="off"><input id="chatIn" placeholder="Ask about prices, vaccines, hours…" aria-label="Message Duke"><button aria-label="Send">➤</button></form>
+    <div class="hint">Duke answers from our published policies. Bookings are confirmed by our team.</div>
+  </div>
+</div>
+</body>
+</html>

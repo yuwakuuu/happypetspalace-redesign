@@ -1,0 +1,41 @@
+<!--
+title: Book Online
+description: Book dog boarding, daycare or a spa visit online at Happy Pets Palace Mesa or Chandler.
+nav: book
+-->
+<header class="page-hero hero" style="padding-bottom:20px">
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span>›</span><span>Book online</span></nav>
+    <h1 class="live-title">Book a <span class="s">Stay!</span></h1>
+    <p class="sub" data-reveal style="--i:3">Book your dog's boarding, daycare or spa visit below. Trouble with the form? Call <a href="tel:+14802071852">480-207-1852</a>.</p>
+  </div>
+</header>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="book-shell">
+      <aside class="book-side">
+        <div class="mini-card" data-reveal>
+          <h4>1. Choose your location</h4>
+          <div class="loc-pick" style="margin-top:10px"><button data-loc="mesa" aria-pressed="true">📍 Mesa</button><button data-loc="chandler" aria-pressed="false">📍 Chandler</button></div>
+          <p style="margin-top:12px;color:var(--ink-2);font-size:15px"><b data-bk="name">Mesa</b><br><span data-bk="addr"></span><br>✉️ <a data-bk="mail"></a></p>
+        </div>
+        <div class="mini-card" data-reveal style="--i:1"><h4>🕐 Hours</h4><table class="hours-mini" data-hours></table></div>
+        <div class="mini-card" data-reveal style="--i:2">
+          <h4>🆕 First time with us?</h4>
+          <p style="color:var(--ink-2);font-size:15px">Every new dog starts with a pre-screen on their first daycare day (3–4 hrs).</p>
+          <div class="ctas" style="margin-top:10px"><button class="btn sm" data-open-chat="prescreen">📅 Schedule pre-screen</button><a class="btn sm ghost" href="new-clients.html">Requirements</a></div>
+        </div>
+        <div class="mini-card" data-reveal style="--i:3">
+          <h4>🐶 Prefer help?</h4>
+          <p style="color:var(--ink-2);font-size:15px">Duke can price your dates and send your request to the front desk.</p>
+          <div class="ctas" style="margin-top:10px"><button class="btn sm teal" data-open-chat="book">Ask Duke</button><a class="btn sm ghost" data-bk="open" target="_blank" rel="noopener">Open in new tab ↗</a></div>
+        </div>
+      </aside>
+      <div class="book-frame" data-reveal="scale">
+        <span class="ph">🐾 Loading the booking form…</span>
+        <iframe id="bookFrame" title="Online booking" allow="payment"></iframe>
+      </div>
+    </div>
+  </div>
+</section>

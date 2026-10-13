@@ -16,11 +16,11 @@
   const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
 
   H.fur = (text, { px = 96, hue = 'pink', family = 'Fredoka', weight = 700, seed = 0 } = {}) => {
-    const dpr = Math.min(2, devicePixelRatio || 1), fs = px * dpr;
+    const dpr = Math.min(2, devicePixelRatio || 1), fs = px * dpr * 1.1;   // fur letters render a touch larger to match the inflated 3D words
     const pal = PAL[hue] || PAL.pink, R = rng(hash(text) + seed);
     const fontCss = `${weight} ${fs}px "${family}", system-ui, sans-serif`;
     const m = document.createElement('canvas').getContext('2d');
-    const spacing = Math.round(fs * .07);
+    const spacing = Math.round(fs * .09);
     m.font = fontCss; m.letterSpacing = spacing + 'px';
     const tm = m.measureText(text);
     const pad = Math.round(fs * .22);
@@ -74,11 +74,12 @@
       c.strokeStyle = `rgba(${col},${alpha})`; c.lineWidth = width;
       c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(mx, my, ex, ey); c.stroke();
     };
-    const L = fs * .055, wBase = Math.max(1, dpr * .8);
+    const L = fs * .05, wBase = Math.max(1, dpr * .8);
     const N = Math.min(90000, n * 2.2);
     for (let i = 0; i < N * .45; i++) strand(L * .7, wBase * 1.4, 0, 0, .6, 1.4);     // dense dark under-fur
     for (let i = 0; i < N * .6; i++) strand(L, wBase * 1.05, .45, .2, .65, 1);       // main coat
     for (let i = 0; i < N * .3; i++) strand(L * 1.1, wBase * .8, .75, .85, .75, .7); // bright tips
-    return { canvas: out, em: { w: W / fs, h: Hh / fs, base: (Hh - base) / fs, padL: pad / fs, padR: pad / fs } };
+    const u = px * dpr;
+    return { canvas: out, em: { w: W / u, h: Hh / u, base: (Hh - base) / u, padL: pad / u, padR: pad / u } };
   };
 })();
