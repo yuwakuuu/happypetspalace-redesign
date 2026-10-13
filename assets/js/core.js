@@ -77,7 +77,7 @@
     let visited = false; try { visited = !!sessionStorage.getItem('hpp-visited'); sessionStorage.setItem('hpp-visited', '1'); } catch {}
     if (!ld) { readyResolve(); return; }
     if (visited) ld.classList.add('quick');
-    const bar = $('.bar i', ld), paw = $('.bar b', ld), pct = $('.pct', ld), msg = visited ? $('.tag', ld) : $('.ld > p:not(.tag)', ld);
+    const bar = $('.bar i', ld), paw = $('.bar b', ld), pct = $('.pct', ld), msg = visited ? $('.tag', ld) : $('.msg', ld);
     const lines = ['Fetching the fun…', 'Inflating the letters…', 'Fluffing the fur…', 'Filling the splash pools…', 'Blowing bubbles…', 'Waking up the pack…'];
     let li = 0, shown = 0, target = 0;
     const mi = setInterval(() => { if (msg) msg.textContent = lines[li = (li + 1) % lines.length]; }, 900);
