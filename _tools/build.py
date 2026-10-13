@@ -64,7 +64,7 @@ def hero(a):
     <div>
       <nav class="crumbs" aria-label="Breadcrumb">{crumbs}</nav>
       <span class="badge" data-reveal style="margin-top:18px"><span class="trophy">{a.get('emoji', '🐾')}</span>{a.get('eyebrow', '')}</span>
-      <h1 class="live-title">{a['title']}</h1>
+      <h1 class="live-title"{f' data-accent="{a["accent"]}"' if a.get('accent') else ''}>{a['title']}</h1>
       <p class="sub" data-reveal style="--i:3">{a.get('sub', '')}</p>
       <div class="ctas" data-reveal style="--i:4">{ctas}</div>
     </div>

@@ -833,3 +833,41 @@ h2.t-ready{line-height:1.36}   /* inflated 3D words need roomier lines when a he
 .trophy-stage .hint{position:absolute;left:24px;bottom:18px;font-size:13px;opacity:.55}
 .trophy-stage .fallback{position:absolute;inset:0;display:grid;place-items:center;font-size:150px}
 @media (max-width:900px){.trophy-stage{grid-template-columns:1fr;min-height:0}.trophy-stage .t3d,.trophy-stage .t3d>canvas{min-height:380px;height:380px}.trophy-stage .copy{padding:6px 26px 34px}}
+
+/* =========================================================
+   v6 — Instagram, paw cursor, centred transition dog
+   ========================================================= */
+/* ---------- Instagram ---------- */
+.ig-switch{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:28px 0 22px}
+.ig-switch button{padding:12px 20px;border-radius:999px;border:2px solid var(--line);background:var(--card);font:600 15.5px var(--font-b);color:var(--ink);transition:all .35s var(--spring)}
+.ig-switch button[aria-selected="true"]{border-color:transparent;color:#fff;background:linear-gradient(45deg,#f9a03f,#e1306c 45%,#833ab4);transform:scale(1.03)}
+.ig-panel{display:none}
+.ig-panel.on{display:block;animation:igIn .5s var(--ease)}
+@keyframes igIn{from{opacity:0;transform:translateY(14px)}}
+.ig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px}
+.ig-post{border-radius:22px;overflow:hidden;background:var(--card);border:1px solid var(--line);box-shadow:0 12px 30px -18px rgba(82,16,52,.3);height:600px;position:relative}
+.ig-post::before{content:"📷 Loading post…";position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-2);font-size:14px}
+.ig-post iframe{position:relative;width:100%;height:100%;border:0;background:transparent}
+.ig-btn{--b:linear-gradient(45deg,#f9a03f,#e1306c 45%,#833ab4);background:linear-gradient(45deg,#f9a03f,#e1306c 45%,#833ab4)}
+.socials a small{font-size:9px;margin-left:1px}
+@media (max-width:900px){.ig-grid{grid-template-columns:1fr 1fr}.ig-grid .ig-post:nth-child(3){display:none}}
+@media (max-width:640px){.ig-grid{grid-template-columns:1fr}.ig-grid .ig-post:nth-child(n+2){display:none}.ig-post{height:560px}.ig-switch button{font-size:13.5px;padding:10px 14px}}
+
+/* ---------- paw cursor (mouse only) ---------- */
+@media (pointer:fine){
+  html{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cg fill='%23521034' stroke='%23fff' stroke-width='1.6'%3E%3Cellipse cx='15' cy='19.5' rx='7' ry='6'/%3E%3Cellipse cx='6.5' cy='12' rx='2.9' ry='3.7' transform='rotate(-20 6.5 12)'/%3E%3Cellipse cx='11.6' cy='7.2' rx='3' ry='3.9' transform='rotate(-6 11.6 7.2)'/%3E%3Cellipse cx='18.4' cy='7.2' rx='3' ry='3.9' transform='rotate(6 18.4 7.2)'/%3E%3Cellipse cx='23.5' cy='12' rx='2.9' ry='3.7' transform='rotate(20 23.5 12)'/%3E%3C/g%3E%3C/svg%3E") 15 13,auto}
+  a,button,[role="button"],[role="tab"],label,summary,select,.chip,.svc,.member,.w3d,.wfur,.live-title.hot,.t3d,.dog-fab,.post,.rv .src,input[type="checkbox"],input[type="range"]{
+    cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 30 30'%3E%3Cg fill='%23e0569f' stroke='%23fff' stroke-width='1.6'%3E%3Cellipse cx='15' cy='19.5' rx='7' ry='6'/%3E%3Cellipse cx='6.5' cy='12' rx='2.9' ry='3.7' transform='rotate(-20 6.5 12)'/%3E%3Cellipse cx='11.6' cy='7.2' rx='3' ry='3.9' transform='rotate(-6 11.6 7.2)'/%3E%3Cellipse cx='18.4' cy='7.2' rx='3' ry='3.9' transform='rotate(6 18.4 7.2)'/%3E%3Cellipse cx='23.5' cy='12' rx='2.9' ry='3.7' transform='rotate(20 23.5 12)'/%3E%3C/g%3E%3C/svg%3E") 17 15,pointer!important}
+  input[type="text"],input[type="search"],input[type="email"],input[type="tel"],input[type="date"],input:not([type]),textarea{cursor:text}
+}
+
+/* ---------- transition: dog sits in the centre of the orbiting toys ---------- */
+.stage{display:grid;place-items:center;height:250px;width:260px;align-items:center}
+.stage .ring{top:50%}
+.stage .dog{grid-area:1/1;margin-top:0}
+.stage .rays{grid-area:1/1}
+#loader .dog,#wipe .dog{animation:dogHopC .62s cubic-bezier(.33,0,.5,1) infinite alternate}
+@keyframes dogHopC{from{transform:translateY(-14px) scale(.97,1.03)}to{transform:translateY(12px) scale(1.06,.94)}}
+#loader .shadow,#wipe .shadow{margin-top:-58px;position:relative;z-index:0}   /* sits right under the hopping dog */
+#loader .stage+.shadow~p,#wipe .stage+.shadow~p{margin-top:46px}
+@media (max-width:640px){.stage{height:210px;width:220px}#loader .shadow,#wipe .shadow{margin-top:-49px}}

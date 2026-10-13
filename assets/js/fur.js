@@ -10,6 +10,7 @@
     teal: { root: [22, 120, 140], mid: [72, 190, 208], tip: [214, 248, 252] },
     butter: { root: [196, 140, 40], mid: [250, 200, 90], tip: [255, 244, 210] },
     white: { root: [200, 178, 196], mid: [246, 236, 244], tip: [255, 255, 255] },
+    brown: { root: [84, 52, 32], mid: [150, 100, 62], tip: [226, 190, 146] },   // a dog's coat
   };
   const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const hash = s => [...s].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261);
