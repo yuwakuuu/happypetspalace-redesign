@@ -257,50 +257,77 @@
      see-through centres with defined rims (so it still reads on a white page), and a wobbling surface. */
   const BUBBLE_VS = `
     uniform float uTime; uniform float uWob;
-    varying vec3 vN; varying vec3 vP;
+    varying vec3 vN; varying vec3 vP; varying vec2 vUv; varying vec3 vX; varying vec3 vY;
     void main() {
       vec3 p = position;
+    #ifndef MAPPED
       float w = sin(p.x * .09 + uTime * 2.7) * sin(p.y * .08 + uTime * 2.1) + .5 * sin(p.z * .15 + uTime * 3.3);
       p += normal * w * uWob;
+    #endif
       vec4 wp = modelMatrix * vec4(p, 1.0);
-      vN = normalize(mat3(modelMatrix) * normal);
-      vP = wp.xyz;
+      mat3 m = mat3(modelMatrix);
+      vN = normalize(m * normal); vX = normalize(m * vec3(1.0, 0.0, 0.0)); vY = normalize(m * vec3(0.0, 1.0, 0.0));
+      vP = wp.xyz; vUv = uv;
       gl_Position = projectionMatrix * viewMatrix * wp;
     }`;
   const BUBBLE_FS = `
-    uniform float uTime; uniform vec3 uTint; uniform float uFade;
-    varying vec3 vN; varying vec3 vP;
+    uniform float uTime; uniform vec3 uTint; uniform float uFade; uniform float uWob;
+    #ifdef MAPPED
+    uniform sampler2D uMap; uniform vec2 uSize; uniform vec2 uWorld;
+    #endif
+    varying vec3 vN; varying vec3 vP; varying vec2 vUv; varying vec3 vX; varying vec3 vY;
     void main() {
+      float cov = 1.0, edgeD = 99.0;
+    #ifdef MAPPED
+      // per-pixel surface from the word's normal map; alpha holds a distance field for a crisp, anti-aliased outline
+      float w1 = sin(vP.x * .09 + uTime * 2.7), w2 = sin(vP.y * .08 + uTime * 2.1);
+      vec2 uv = vUv + uWob * .5 * vec2(w2, w1) / uWorld;
+      vec4 tx = texture2D(uMap, uv);
+      float fw = length(fwidth(vUv * uSize)) * .7071;
+      edgeD = (tx.a - .5) * 12.0;                          // raster px inside the outline
+      cov = clamp(edgeD / max(fw, 1e-3) + .5, 0.0, 1.0);
+      if (cov < .003) discard;
+      vec3 m = tx.rgb * 2.0 - 1.0;
+      m.xy += uWob * .03 * vec2(w1, w2) * m.z;            // the surface ripples when it wobbles
+      vec3 n = normalize(vX * m.x + vY * m.y + vN * max(m.z, 0.0));
+    #else
       vec3 n = normalize(vN);
-      vec3 v = vec3(0.0, 0.0, 1.0);
-      float ndv = clamp(dot(n, v), 0.0, 1.0);
-      float fr = smoothstep(.97, .15, ndv);                // clear in the middle, building toward the rims
+    #endif
+      float ndv = clamp(n.z, 0.0, 1.0);
+      float fr = pow(1.0 - ndv, .85);                      // clear on the crown, film colour builds toward the sides
       // thin-film colours: hue rides the viewing angle plus a slow swirl
-      float h = fr * 1.6 + n.x * .25 - n.y * .18 + vP.x * .0025 + uTime * .06;
+      float h = fr * 1.1 + n.x * .3 - n.y * .22 + vP.x * .0018 + uTime * .05;
       vec3 film = .5 + .5 * cos(6.2831 * (h + vec3(0.0, .33, .67)));
-      film = mix(vec3(1.0), film, .85);
-      // the environment it reflects: soft studio — bright above, cool grey below (gives the darker streaks)
-      vec3 r = reflect(-v, n);
-      vec3 env = mix(vec3(.42, .46, .55), vec3(1.0), smoothstep(-.55, .65, r.y));
-      float win = smoothstep(.5, .9, r.y) * smoothstep(-.05, .5, -r.x);
-      float spec = pow(max(dot(r, normalize(vec3(-.45, .65, .6))), 0.0), 70.0) + .6 * pow(max(dot(r, normalize(vec3(.55, .25, .8))), 0.0), 120.0);
-      vec3 col = env * mix(vec3(1.0), film, .65);
-      col = mix(col, uTint, .34);                         // brand colour in the film
-      float edge = smoothstep(.26, .0, ndv);              // defined silhouette so it reads on white
-      col = mix(col, mix(vec3(.3, .32, .42), uTint * .55, .5) * mix(vec3(1.0), film, .5), edge * .75);
-      float a = .05 + fr * .7 + edge * .25 + win * .22 * fr + spec * fr;
-      col += spec * .8;
-      gl_FragColor = vec4(col, clamp(a, 0.0, .95) * uFade);
+      film = mix(film, vec3(dot(film, vec3(.33))), .15);
+      vec3 r = reflect(vec3(0.0, 0.0, -1.0), n);
+      // what it reflects: bright sky above, a soft tinted floor below (gives each stroke a rounded underside)
+      vec3 env = mix(mix(uTint, vec3(.62, .7, .86), .45), vec3(1.0), smoothstep(-.6, .55, r.y));
+      vec3 col = env * mix(vec3(1.0), film, .35 + .45 * fr);
+      col = mix(col, uTint, .2 + .2 * fr);                 // brand colour in the film
+      // a defined, saturated outline so it reads on white (by distance to the edge, so it's an even width)
+      float rim = max(1.0 - smoothstep(.5, 4.0, edgeD), smoothstep(.3, .05, ndv));
+      col = mix(col, mix(film, uTint, .7) * .66, rim * .8);
+      // glossy window streak on the upper-left of every stroke + small sharp glints
+      float win = smoothstep(.28, .62, n.y) * smoothstep(-.35, .25, -n.x) * smoothstep(.0, .25, ndv);
+      float spec = pow(max(dot(r, normalize(vec3(-.4, .55, .73))), 0.0), 40.0) + .5 * pow(max(dot(r, normalize(vec3(.55, -.4, .73))), 0.0), 70.0);
+      col = mix(col, vec3(1.0), clamp(win * .75 + spec, 0.0, 1.0));
+      float a = .1 + fr * .62 + rim * .45 + win * .5 + spec;
+      col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - .5) / 255.0;   // dither: no banding
+      gl_FragColor = vec4(col, clamp(a, 0.0, .96) * uFade * cov);
     }`;
-  const bubbleMat = tint => new T.ShaderMaterial({
+  const bubbleMat = (tint, word) => new T.ShaderMaterial({
     vertexShader: BUBBLE_VS, fragmentShader: BUBBLE_FS, transparent: true, depthWrite: false, side: T.FrontSide,
-    uniforms: { uTime: { value: 0 }, uWob: { value: .6 }, uTint: { value: new T.Color(tint) }, uFade: { value: 1 } }
+    defines: word ? { MAPPED: '' } : {}, extensions: { derivatives: true },
+    uniforms: { uTime: { value: 0 }, uWob: { value: .6 }, uTint: { value: new T.Color(tint) }, uFade: { value: 1 },
+      uMap: { value: word ? word.tex : null }, uSize: { value: new T.Vector2(word ? word.W : 1, word ? word.H : 1) },
+      uWorld: { value: new T.Vector2(word ? word.ww : 1, word ? word.wh : 1) } }
   });
 
-  /* ---------- inflated-word geometry ----------
-     Each WORD becomes one continuous balloon: rasterise it (fattened so neighbouring letters fuse),
-     compute a signed distance field, then raise a smooth dome over it (front + mirrored back).
-     No per-letter extrusion means no seams, no overlapping letters and no sharp creases. */
+  /* ---------- inflated-word surface ----------
+     Each WORD becomes one continuous balloon: rasterise it (fattened so neighbouring letters fuse), compute a
+     signed distance field, round it off, and bake the dome's surface direction into a high-res normal map.
+     The shader lights every pixel from that map, so the surface is perfectly smooth (no mesh facets, seams
+     or creases) and the outline is anti-aliased at any size. */
   function edt1d(f, n, d, v, z) {          // Felzenszwalb squared distance transform, 1-D
     let k = 0; v[0] = 0; z[0] = -1e20; z[1] = 1e20;
     for (let q = 1; q < n; q++) {
@@ -317,77 +344,67 @@
     for (let y = 0; y < H; y++) { for (let x = 0; x < W; x++) f[x] = grid[y * W + x]; edt1d(f, W, d, v, z); for (let x = 0; x < W; x++) grid[y * W + x] = Math.sqrt(d[x]); }
     return grid;
   }
+  function boxBlur(a, W, H, r, passes) {   // in-place separable running-sum blur (≈ gaussian after 3 passes)
+    const b = new Float32Array(W * H), n = 2 * r + 1;
+    for (let p = 0; p < passes; p++) {
+      for (let y = 0; y < H; y++) { const o = y * W; let s = 0;
+        for (let k = -r; k <= r; k++) s += a[o + Math.min(W - 1, Math.max(0, k))];
+        for (let x = 0; x < W; x++) { b[o + x] = s / n; s += a[o + Math.min(W - 1, x + r + 1)] - a[o + Math.max(0, x - r)]; } }
+      for (let x = 0; x < W; x++) { let s = 0;
+        for (let k = -r; k <= r; k++) s += b[Math.min(H - 1, Math.max(0, k)) * W + x];
+        for (let y = 0; y < H; y++) { a[y * W + x] = s / n; s += b[Math.min(H - 1, y + r + 1) * W + x] - b[Math.max(0, y - r) * W + x]; } }
+    }
+    return a;
+  }
   const wordGeoCache = new Map();
   function inflatedWord(text) {
     if (wordGeoCache.has(text)) return wordGeoCache.get(text);
-    const F = MOBILE ? 150 : 230, fontCss = `700 ${F}px "Fredoka", system-ui, sans-serif`;   // high-res raster = smooth, HD surface
+    const F = MOBILE ? 160 : 240, fontCss = `700 ${F}px "Fredoka", system-ui, sans-serif`;   // high-res raster = HD surface
     const m = document.createElement('canvas').getContext('2d'); m.font = fontCss;
-    const spacing = -F * .035;   // tight tracking so neighbours kiss and fuse
+    const spacing = -F * .05;    // tight tracking so neighbours kiss and fuse (keeps the letter holes open)
     if ('letterSpacing' in m) m.letterSpacing = spacing + 'px';
-    const tw = m.measureText(text).width, pad = Math.round(F * .3);
+    const tw = m.measureText(text).width, pad = Math.round(F * .22);
     const W = Math.ceil(tw + pad * 2), Hh = Math.ceil(F * 1.35 + pad * 2), base = pad + F * 1.0;
     const c = document.createElement('canvas'); c.width = W; c.height = Hh;
     const g2 = c.getContext('2d', { willReadFrequently: true });
     g2.font = fontCss; if ('letterSpacing' in g2) g2.letterSpacing = spacing + 'px';
-    g2.lineJoin = 'round'; g2.lineWidth = F * .045; g2.strokeStyle = g2.fillStyle = '#000';
+    g2.lineJoin = 'round'; g2.lineWidth = F * .018; g2.strokeStyle = g2.fillStyle = '#000';
     g2.fillText(text, pad, base); g2.strokeText(text, pad, base);   // the stroke fattens letters so neighbours fuse
     const A = g2.getImageData(0, 0, W, Hh).data, N = W * Hh, INF = 1e20;
     const inside = new Float64Array(N), outside = new Float64Array(N);
     for (let i = 0; i < N; i++) { const on = A[i * 4 + 3] > 127; inside[i] = on ? INF : 0; outside[i] = on ? 0 : INF; }
     edt(inside, W, Hh); edt(outside, W, Hh);
-    // signed distance, then a light blur so the dome has no pixel "staircase" ripples
-    let SD = new Float32Array(N);
-    for (let i = 0; i < N; i++) SD[i] = inside[i] > 0 ? inside[i] - .5 : -(outside[i] - .5);
-    const tmp = new Float32Array(N), R0 = 2;
-    for (let pass = 0; pass < 2; pass++) {
-      for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) { let a = 0, c = 0; for (let k = -R0; k <= R0; k++) { const xx = x + k; if (xx >= 0 && xx < W) { a += SD[y * W + xx]; c++; } } tmp[y * W + x] = a / c; }
-      for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) { let a = 0, c = 0; for (let k = -R0; k <= R0; k++) { const yy = y + k; if (yy >= 0 && yy < Hh) { a += tmp[yy * W + x]; c++; } } SD[y * W + x] = a / c; }
+    // signed distance (+ inside), lightly smoothed so the outline has no pixel staircase
+    const dL = new Float32Array(N);
+    for (let i = 0; i < N; i++) dL[i] = inside[i] > 0 ? inside[i] - .5 : -(outside[i] - .5);
+    boxBlur(dL, W, Hh, 1, 2);
+    let R = 0; for (let i = 0; i < N; i++) if (dL[i] > R) R = dL[i];
+    // a heavily rounded copy for the interior: removes the crease along each stroke's centre line
+    const dH = new Float32Array(N); for (let i = 0; i < N; i++) dH[i] = Math.min(R, Math.max(-4, dL[i]));
+    boxBlur(dH, W, Hh, Math.max(2, Math.round(R * .3)), 3);
+    const D = new Float32Array(N);
+    for (let i = 0; i < N; i++) { const t = Math.min(1, Math.max(0, dL[i] / (R * .6))), s = t * t * (3 - 2 * t); D[i] = dL[i] + (Math.max(dH[i], 0) - dL[i]) * s * (dL[i] > 0 ? 1 : 0); }
+    // bake the balloon: round tube profile h = R·sqrt(1-(1-t)²), normals from its slope; rows flipped for GL
+    const px = new Uint8Array(N * 4), E = 6, ZS = .82;
+    for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, xl = x > 0 ? i - 1 : i, xr = x < W - 1 ? i + 1 : i, yu = y > 0 ? i - W : i, yd = y < Hh - 1 ? i + W : i;
+      const gx = (D[xr] - D[xl]) / 2, gy = (D[yd] - D[yu]) / 2;
+      let nx, ny, nz;
+      if (dL[i] > 0) {
+        const t = Math.min(1, Math.max(.0015, D[i] / R)), k = ZS * (1 - t) / Math.sqrt(Math.max(1e-6, 1 - (1 - t) * (1 - t)));
+        nx = -k * gx; ny = k * gy; nz = 1;
+      } else { const gl = Math.hypot(gx, gy) || 1; nx = -gx / gl; ny = gy / gl; nz = 0; }   // outside: keep the rim's sideways normal
+      const l = Math.hypot(nx, ny, nz) || 1, o = ((Hh - 1 - y) * W + x) * 4;
+      px[o] = Math.round((nx / l * .5 + .5) * 255); px[o + 1] = Math.round((ny / l * .5 + .5) * 255); px[o + 2] = Math.round((nz / l * .5 + .5) * 255);
+      px[o + 3] = Math.round(Math.min(1, Math.max(0, .5 + dL[i] / (2 * E))) * 255);
     }
-    const sdf = i => SD[i];
-    const S = (x, y) => { x = Math.max(0, Math.min(W - 1.001, x)); y = Math.max(0, Math.min(Hh - 1.001, y)); const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, i = y0 * W + x0;
-      return (sdf(i) * (1 - fx) + sdf(i + 1) * fx) * (1 - fy) + (sdf(i + W) * (1 - fx) + sdf(i + W + 1) * fx) * fy; };
-    // tube radius ~ the thickest stroke half-width, so strokes become round tubes
-    let maxIn = 0; for (let i = 0; i < N; i++) if (inside[i] > maxIn) maxIn = inside[i];
-    const R = maxIn * .95, step = MOBILE ? 4.2 : 3.4;   // (in raster px — F is larger now, so this is a finer mesh)
-    const nx = Math.ceil(W / step) + 1, ny = Math.ceil(Hh / step) + 1, scale = SIZE / F;
-    const pos = [], keep = new Uint8Array(nx * ny), front = new Int32Array(nx * ny).fill(-1), back = new Int32Array(nx * ny).fill(-1);
-    const idx = [];
-    const vx = [], vy = [], vh = [], ox = [], oy = [];
-    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-      let x = i * step, y = j * step, d = S(x, y);
-      if (d < -step * 1.6) continue;
-      const gx = S(x + 1.5, y) - S(x - 1.5, y), gy = S(x, y + 1.5) - S(x, y - 1.5), gl = Math.hypot(gx, gy) || 1;
-      if (d < 0) { x -= gx / gl * d; y -= gy / gl * d; d = 0; }   // snap near-outside vertices onto the outline: smooth silhouette
-      ox[j * nx + i] = -gx / gl; oy[j * nx + i] = gy / gl;          // outward direction (canvas y is flipped vs world y)
-      const t = Math.min(d, R) / R, h = R * Math.sqrt(Math.max(0, 1 - (1 - t) * (1 - t)));   // round tube profile
-      keep[j * nx + i] = 1; vx[j * nx + i] = x; vy[j * nx + i] = y; vh[j * nx + i] = h;
-    }
-    const P = [], rimV = [];
-    const addV = (k, sgn) => { P.push((vx[k] - pad) * scale, (base - vy[k]) * scale, sgn * vh[k] * scale * .82); const v = P.length / 3 - 1; if (vh[k] < R * .02) rimV.push(v, k); return v; };
-    for (let k = 0; k < nx * ny; k++) if (keep[k]) { front[k] = addV(k, 1); back[k] = addV(k, -1); }
-    for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
-      const a = j * nx + i, b = a + 1, c2 = a + nx, d2 = c2 + 1;
-      if (!(keep[a] && keep[b] && keep[c2] && keep[d2])) {
-        // partial cells: keep whichever triangles are fully present
-        if (keep[a] && keep[c2] && keep[b]) { idx.push(front[a], front[c2], front[b], back[a], back[b], back[c2]); }
-        if (keep[b] && keep[c2] && keep[d2]) { idx.push(front[b], front[c2], front[d2], back[b], back[d2], back[c2]); }
-        continue;
-      }
-      if (vh[a] + vh[b] + vh[c2] + vh[d2] === 0) continue;   // fully on the outline: nothing to draw
-      idx.push(front[a], front[c2], front[b], front[b], front[c2], front[d2]);
-      idx.push(back[a], back[b], back[c2], back[b], back[d2], back[c2]);
-    }
-    const geo = new T.BufferGeometry();
-    geo.setAttribute('position', new T.Float32BufferAttribute(P, 3)); geo.setIndex(idx); geo.computeVertexNormals();
-    { // on the outline the front and back halves meet: give both the same sideways normal so there's no seam line
-      const Nn = geo.attributes.normal;
-      for (let r = 0; r < rimV.length; r += 2) Nn.setXYZ(rimV[r], ox[rimV[r + 1]], oy[rimV[r + 1]], 0);
-      Nn.needsUpdate = true;
-    }
-    geo.computeBoundingBox();
-    const bb = geo.boundingBox, cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2;
-    geo.translate(-cx, -cy, 0);
-    geo.userData = { cx, cy, w: (W - 2 * pad) * scale };
+    const tex = new T.DataTexture(px, W, Hh, T.RGBAFormat);
+    tex.generateMipmaps = true; tex.minFilter = T.LinearMipmapLinearFilter; tex.magFilter = T.LinearFilter; tex.needsUpdate = true;
+    const scale = SIZE / F, ww = W * scale, wh = Hh * scale;
+    const geo = new T.PlaneGeometry(ww, wh);
+    const cx = (W / 2 - pad) * scale, cy = (base - Hh / 2) * scale;
+    geo.userData = { cx, cy, w: tw * scale, tex, W, H: Hh, ww, wh,
+      solid: (u, v) => { const x = Math.min(W - 1, Math.max(0, u * W | 0)), y = Math.min(Hh - 1, Math.max(0, (1 - v) * Hh | 0)); return dL[y * W + x] > -F * .02; } };
     wordGeoCache.set(text, geo);
     return geo;
   }
@@ -428,7 +445,7 @@
       });
       group.clear(); const old = items; items = [];
       lines.forEach((ln, li) => ln.forEach(w => {
-        const n = items.length, mat = bubbleMat(w.color); allMats.push(mat);
+        const n = items.length, mat = bubbleMat(w.color, w.g.userData); allMats.push(mat);
         const m = new T.Mesh(w.g, mat);
         const home = new T.Vector3(w.x + w.g.userData.cx, -li * lineH + w.g.userData.cy, 0);
         const s = old[n] ? old[n].s : { ox: (w.x < 1 ? Math.random() * .5 : Math.random() - .5) * 120,   // edge words never drift past the canvas edge
@@ -449,7 +466,11 @@
       if (!floaters.length) for (let i = 0; i < (MOBILE ? 6 : 11); i++) spawnFloater(true);
     }
     const toLocal = e => { const r = canvas.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); tx = ptr.x; ty = ptr.y; };
-    const pick = () => { ray.setFromCamera(ptr, cam); const hit = ray.intersectObjects(group.children, false)[0]; return hit && items.find(l => l.m === hit.object); };
+    const pick = () => {   // only count hits on the bubble itself, not the transparent margin of its quad
+      ray.setFromCamera(ptr, cam);
+      const hit = ray.intersectObjects(group.children, false).find(h => h.uv && h.object.geometry.userData.solid(h.uv.x, h.uv.y));
+      return hit && items.find(l => l.m === hit.object);
+    };
     const burst = (pos, n) => {
       for (let i = 0; i < n; i++) {
         const m = new T.Mesh(sphere, floaterMat()), s = 2 + Math.random() * 7; m.scale.setScalar(s); m.position.copy(pos); m.position.x += (Math.random() - .5) * 120; m.position.z += 30;
