@@ -12,6 +12,7 @@
   if (T.ColorManagement) T.ColorManagement.legacyMode = false;   // treat hex colours as sRGB so they don't wash out
   const SIZE = 100;                       // world units per em
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MOBILE = matchMedia('(max-width: 700px), (pointer: coarse)').matches;   // lighter geometry + resolution on phones
   H.colors = { plum: '#c23a8c', teal: '#1fb2c9', pink: '#ff8fc6', white: '#fff4fb', butter: '#ffc23d', grape: '#8a5cff' };
 
   /* ---------- shared building blocks ---------- */
@@ -29,18 +30,23 @@
     bounce: { rot: .09, y: .035, s: .04 } // each letter gets its own playful tilt, hop and size
   };
   const jit = (i, k) => Math.sin(i * 12.9898 + k * 78.233) * 43758.5453 % 1;   // stable pseudo-random in (-1,1)
-  function glyphGeo(ch, fontName = 'fredoka') {
-    const L = H.look, key = fontName + ch + L.inflate + L.depth;
-    const [bt, bs, bo] = L.inflate;
+  function glyphGeo(ch, fontName = 'fredoka', inflate = H.look.inflate) {
+    const L = H.look, key = fontName + ch + inflate + L.depth;
+    const [bt, bs, bo] = inflate;
     if (geoCache.has(key)) return geoCache.get(key);
     let g = new T.TextGeometry(ch, {
-      font: font(fontName), size: SIZE, height: SIZE * H.look.depth, curveSegments: 18,
-      bevelEnabled: true, bevelThickness: SIZE * bt, bevelSize: SIZE * bs, bevelOffset: SIZE * bo, bevelSegments: 20
+      font: font(fontName), size: SIZE, height: SIZE * H.look.depth, curveSegments: MOBILE ? 10 : 18,
+      bevelEnabled: true, bevelThickness: SIZE * bt, bevelSize: SIZE * bs, bevelOffset: SIZE * bo, bevelSegments: MOBILE ? 10 : 20
     });
     g.deleteAttribute('normal'); g.deleteAttribute('uv');
     g = T.BufferGeometryUtils.mergeVertices(g, .02);
     g.computeVertexNormals();               // smooth normals across the bevel = soft pillow shading
     g.computeBoundingBox();
+    { // the flat front/back caps should face exactly forward/back — averaging them with the bevel causes streaks
+      const P = g.attributes.position, N = g.attributes.normal, zmax = g.boundingBox.max.z, zmin = g.boundingBox.min.z;
+      for (let i = 0; i < P.count; i++) { const z = P.getZ(i); if (z > zmax - .01) N.setXYZ(i, 0, 0, 1); else if (z < zmin + .01) N.setXYZ(i, 0, 0, -1); }
+      N.needsUpdate = true;
+    }
     const b = g.boundingBox, cx = (b.min.x + b.max.x) / 2, cy = (b.min.y + b.max.y) / 2;
     g.translate(-cx, -cy, 0);               // pivot at glyph centre so squish/rotate looks natural
     g.userData = { cx, cy, adv: (font(fontName).data.glyphs[ch] || { ha: SIZE * 6 }).ha * SIZE / 1000 };
@@ -115,7 +121,8 @@
     }
     if (tilt) { o.group.rotation.x = -.16; o.group.rotation.y = .05; }
     const pad = SIZE * .26, asc = meta.ascender * SIZE / 1000, desc = meta.descender * SIZE / 1000;
-    const x0 = -pad, x1 = x + pad, y0 = desc - pad * 1.1, y1 = asc + pad * .75;
+    const padR = pad * 1.6, padB = pad * 1.7;              // the shadow falls down and to the right — give it room so it isn't clipped
+    const x0 = -pad, x1 = x + padR, y0 = desc - padB, y1 = asc + pad * .75;
     fitShadow(o.key, o.floor, x0, x1, y0, y1);
     const dpr = Math.min(2, devicePixelRatio || 1), scale = px * dpr / SIZE;
     const W = Math.ceil((x1 - x0) * scale), Hh = Math.ceil((y1 - y0) * scale);
@@ -124,7 +131,7 @@
     o.renderer.render(o.scene, o.cam);
     const cv = document.createElement('canvas'); cv.width = W; cv.height = Hh;
     cv.getContext('2d').drawImage(o.renderer.domElement, 0, 0);
-    return { canvas: cv, em: { w: (x1 - x0) / SIZE, h: (y1 - y0) / SIZE, base: -y0 / SIZE, padL: pad / SIZE, padR: pad / SIZE } };
+    return { canvas: cv, em: { w: (x1 - x0) / SIZE, h: (y1 - y0) / SIZE, base: -y0 / SIZE, padL: pad / SIZE, padR: padR / SIZE } };
   };
 
   /* ---------- live interactive title ---------- */
@@ -175,13 +182,15 @@
       }));
       const contentH = lines.length * lineH;
       Hh = Math.ceil(contentH / SIZE * px + px * .5);
-      canvas.style.width = W + 'px'; canvas.style.height = Hh + 'px';
       el.style.height = Hh + 'px';
-      renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
-      renderer.setSize(W, Hh, false);
-      const top = asc + SIZE * .3, units = Hh / px * SIZE;   // headroom for inflation, hops and tilts
-      Object.assign(cam, { left: -SIZE * .06, right: maxW - SIZE * .06, top, bottom: top - units }); cam.updateProjectionMatrix();
-      fitShadow(key, floor, 0, maxW, top - units, top);
+      // the canvas overhangs its box so shadows and hops never clip at the edges (pointer events go to the element)
+      const oL = px * .15, oR = px * .6, oT = px * .25, oB = px * .6, u = SIZE / px;
+      canvas.style.cssText = `left:${-oL}px;top:${-oT}px;width:${W + oL + oR}px;height:${Hh + oT + oB}px`;
+      renderer.setPixelRatio(Math.min(MOBILE ? 1.5 : 2, devicePixelRatio || 1));
+      renderer.setSize(W + oL + oR, Hh + oT + oB, false);
+      const top = asc + SIZE * .3, units = Hh / px * SIZE, x0 = -SIZE * .06;
+      Object.assign(cam, { left: x0 - oL * u, right: x0 + maxW + oR * u, top: top + oT * u, bottom: top - units - oB * u }); cam.updateProjectionMatrix();
+      fitShadow(key, floor, x0 - oL * u, x0 + maxW + oR * u, top - units - oB * u, top + oT * u);
     }
 
     const toLocal = e => { const r = canvas.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); tx = ptr.x; ty = ptr.y; };
@@ -240,6 +249,194 @@
       relayout: layout,
       debug: () => ({ running, visible, raf, n: letters.length, first: letters[0] && { sy: letters[0].s.y, pos: letters[0].m.position.toArray(), sc: letters[0].m.scale.toArray() }, cam: [cam.left, cam.right, cam.top, cam.bottom] }),
       jiggle() { letters.forEach((l, i) => setTimeout(() => { l.s.vy += 260; l.s.vsy += 4; }, i * 35)); }
+    };
+  };
+
+  /* ---------- soap-bubble title (homepage hero) ----------
+     Custom shader: thin-film iridescence that shifts with viewing angle, glassy window reflections,
+     see-through centres with defined rims (so it still reads on a white page), and a wobbling surface. */
+  const BUBBLE_VS = `
+    uniform float uTime; uniform float uWob;
+    varying vec3 vN; varying vec3 vP;
+    void main() {
+      vec3 p = position;
+      float w = sin(p.x * .09 + uTime * 2.7) * sin(p.y * .08 + uTime * 2.1) + .5 * sin(p.z * .15 + uTime * 3.3);
+      p += normal * w * uWob;
+      vec4 wp = modelMatrix * vec4(p, 1.0);
+      vN = normalize(mat3(modelMatrix) * normal);
+      vP = wp.xyz;
+      gl_Position = projectionMatrix * viewMatrix * wp;
+    }`;
+  const BUBBLE_FS = `
+    uniform float uTime; uniform vec3 uTint; uniform float uFade;
+    varying vec3 vN; varying vec3 vP;
+    void main() {
+      vec3 n = normalize(vN);
+      vec3 v = vec3(0.0, 0.0, 1.0);
+      float ndv = clamp(dot(n, v), 0.0, 1.0);
+      float fr = smoothstep(.93, .12, ndv);                // clear in the flat middle, building toward the rims (hides mesh seams)
+      // thin-film colours: hue rides the viewing angle plus a slow swirl
+      float h = fr * 1.6 + n.x * .25 - n.y * .18 + vP.x * .0025 + uTime * .06;
+      vec3 film = .5 + .5 * cos(6.2831 * (h + vec3(0.0, .33, .67)));
+      film = mix(vec3(1.0), film, .85);
+      // the environment it reflects: soft studio — bright above, cool grey below (gives the darker streaks)
+      vec3 r = reflect(-v, n);
+      vec3 env = mix(vec3(.42, .46, .55), vec3(1.0), smoothstep(-.55, .65, r.y));
+      float win = smoothstep(.5, .9, r.y) * smoothstep(-.05, .5, -r.x);
+      float spec = pow(max(dot(r, normalize(vec3(-.45, .65, .6))), 0.0), 70.0) + .6 * pow(max(dot(r, normalize(vec3(.55, .25, .8))), 0.0), 120.0);
+      vec3 col = env * mix(vec3(1.0), film, .65);
+      col = mix(col, uTint, .2);                          // a whisper of brand colour
+      float edge = smoothstep(.26, .0, ndv);              // defined silhouette so it reads on white
+      col = mix(col, vec3(.36, .4, .5) * mix(vec3(1.0), film, .5), edge * .55);
+      float a = .025 + fr * .66 + edge * .22 + win * .22 * fr + spec * fr;
+      col += spec * .8;
+      gl_FragColor = vec4(col, clamp(a, 0.0, .95) * uFade);
+    }`;
+  const bubbleMat = tint => new T.ShaderMaterial({
+    vertexShader: BUBBLE_VS, fragmentShader: BUBBLE_FS, transparent: true, depthWrite: false, side: T.FrontSide,
+    uniforms: { uTime: { value: 0 }, uWob: { value: .6 }, uTint: { value: new T.Color(tint) }, uFade: { value: 1 } }
+  });
+
+  const BUBBLE_INFLATE = [.47, .072, -.055];   // fat tubes, but no growing into the letter holes (no folds when see-through)
+  H.bubbles = (el, words, { fontName = 'fredoka', onHit } = {}) => {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'live3d'; canvas.setAttribute('aria-hidden', 'true');
+    el.append(canvas);
+    const renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setClearColor(0, 0);
+    const scene = new T.Scene();
+    const cam = new T.OrthographicCamera(-1, 1, 1, -1, -2000, 2000); cam.position.z = 1000;
+    const group = new T.Group(); scene.add(group);
+    const meta = font(fontName).data, asc = meta.ascender * SIZE / 1000;
+    let letters = [], W = 0, Hh = 0, px = 100, lineH = SIZE * 1.24, view = { l: 0, r: 1, t: 1, b: 0 };
+    const allMats = [];
+    const ray = new T.Raycaster(), ptr = new T.Vector2(-9, -9);
+    let hover = null, tx = 0, ty = 0, t0 = performance.now();
+
+    // free-floating little bubbles (like the loose bubbles in the reference)
+    const sphere = new T.SphereGeometry(1, MOBILE ? 18 : 28, MOBILE ? 14 : 20);
+    const floaters = [], pops = [];
+    const floaterMat = () => { const m = bubbleMat('#bfe6ee'); m.uniforms.uWob.value = 0; allMats.push(m); return m; };
+    const spawnFloater = initial => {
+      const m = new T.Mesh(sphere, floaterMat()), s = 4 + Math.random() * 14;
+      m.scale.setScalar(s);
+      m.position.set(view.l + Math.random() * (view.r - view.l), initial ? view.b + Math.random() * (view.t - view.b) : view.b - 20, (Math.random() - .5) * 120);
+      m.userData = { vy: 10 + Math.random() * 16, ph: Math.random() * 6.28, s };
+      scene.add(m); floaters.push(m);
+    };
+
+    function layout() {
+      px = parseFloat(getComputedStyle(el).fontSize) || 100;
+      W = el.clientWidth;
+      const maxW = W / px * SIZE;
+      const space = (font(fontName).data.glyphs[' '] || { ha: 260 }).ha * SIZE / 1000 * 1.7;
+      const lines = [[]]; let lx = 0;
+      words.forEach(w => {
+        const wW = [...w.text].reduce((s, ch) => s + glyphGeo(ch, fontName, BUBBLE_INFLATE).userData.adv * H.look.track, 0);
+        if (lx > 0 && lx + wW > maxW) { lines.push([]); lx = 0; }
+        lines[lines.length - 1].push({ ...w, x: lx }); lx += wW + space;
+      });
+      group.clear(); const old = letters; letters = [];
+      lines.forEach((ln, li) => ln.forEach(w => {
+        let x = w.x;
+        [...w.text].forEach(ch => {
+          const g = glyphGeo(ch, fontName, BUBBLE_INFLATE);
+          if (ch.trim()) {
+            const n = letters.length, mat = bubbleMat(w.color); allMats.push(mat);
+            const m = new T.Mesh(g, mat);
+            const home = new T.Vector3(x + g.userData.cx, -li * lineH + g.userData.cy, 0);
+            // start low and scattered, like bubbles drifting up from below
+            const s = old[n] ? old[n].s : { ox: (Math.random() - .5) * 160, oy: -260 - Math.random() * 260, vx: 0, vy: 0, sc: .2, vsc: 0,
+              rz: (Math.random() - .5) * 1.2, vrz: 0, delay: n * .055, wob: 2.4, popT: -1 };
+            m.position.copy(home); group.add(m);
+            letters.push({ m, home, s, i: n });
+          }
+          x += g.userData.adv * H.look.track;
+        });
+      }));
+      Hh = Math.ceil(lines.length * lineH / SIZE * px + px * .5);
+      el.style.height = Hh + 'px';
+      const oL = px * .15, oR = px * .5, oT = px * .3, oB = px * .4, u = SIZE / px;
+      canvas.style.cssText = `left:${-oL}px;top:${-oT}px;width:${W + oL + oR}px;height:${Hh + oT + oB}px`;
+      renderer.setPixelRatio(Math.min(MOBILE ? 1.5 : 2, devicePixelRatio || 1));
+      renderer.setSize(W + oL + oR, Hh + oT + oB, false);
+      const top = asc + SIZE * .3, units = Hh / px * SIZE, x0 = -SIZE * .06;
+      view = { l: x0 - oL * u, r: x0 + maxW + oR * u, t: top + oT * u, b: top - units - oB * u };
+      Object.assign(cam, { left: view.l, right: view.r, top: view.t, bottom: view.b }); cam.updateProjectionMatrix();
+      if (!floaters.length) for (let i = 0; i < (MOBILE ? 6 : 11); i++) spawnFloater(true);
+    }
+
+    const toLocal = e => { const r = canvas.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); tx = ptr.x; ty = ptr.y; };
+    const pick = () => { ray.setFromCamera(ptr, cam); const hit = ray.intersectObjects(group.children, false)[0]; return hit && letters.find(l => l.m === hit.object); };
+    const burst = (pos, n) => {
+      for (let i = 0; i < n; i++) {
+        const m = new T.Mesh(sphere, floaterMat()), s = 2 + Math.random() * 6; m.scale.setScalar(s); m.position.copy(pos); m.position.z += 30;
+        const a = Math.random() * 6.28, sp = 60 + Math.random() * 120; m.userData = { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 60, life: 1 };
+        scene.add(m); pops.push(m);
+      }
+    };
+    el.addEventListener('pointermove', e => {
+      toLocal(e); const l = pick();
+      if (l && l !== hover) { l.s.wob = 4; l.s.vsc += 1.5; onHit && onHit('hover', l); }
+      hover = l || null; el.style.cursor = l ? 'pointer' : '';
+    });
+    el.addEventListener('pointerleave', () => { hover = null; tx = ty = 0; ptr.set(-9, -9); });
+    el.addEventListener('pointerdown', e => {
+      toLocal(e); const l = pick(); if (!l || l.s.popT >= 0) return;
+      l.s.popT = 0; burst(l.m.getWorldPosition(new T.Vector3()), 9);   // pop! then it re-inflates
+      onHit && onHit('pop', l);
+    });
+
+    let visible = true, raf = 0, last = performance.now(), running = false;
+    new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible && running && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }).observe(el);
+    function tick(now) {
+      raf = 0;
+      const elapsed = Math.min(.5, Math.max(0, (now - last) / 1000)); last = now;
+      const t = (now - t0) / 1000;
+      allMats.forEach(m => m.uniforms.uTime.value = t);
+      group.rotation.y += ((reduce ? 0 : tx * .16) - group.rotation.y) * .05;
+      group.rotation.x += ((reduce ? 0 : -ty * .12) - group.rotation.x) * .05;
+      letters.forEach(l => {
+        const s = l.s;
+        for (let left = elapsed; left > 1e-6; left -= 1 / 120) {
+          const dt = Math.min(left, 1 / 120);
+          if (t < s.delay) continue;
+          // soft, floaty springs: bubbles drift into place rather than snap
+          s.vx += (-38 * s.ox - 5 * s.vx) * dt; s.ox += s.vx * dt;
+          s.vy += (-38 * s.oy - 5 * s.vy) * dt; s.oy += s.vy * dt;
+          s.vrz += (-30 * s.rz - 4 * s.vrz) * dt; s.rz += s.vrz * dt;
+          let target = 1;
+          if (s.popT >= 0) { s.popT += dt; target = s.popT < .08 ? 1.35 : s.popT < .7 ? 0 : 1; if (s.popT > 1.4) s.popT = -1; }
+          s.vsc += (-90 * (s.sc - target) - 7 * s.vsc) * dt; s.sc += s.vsc * dt;
+          s.wob += (.6 - s.wob) * dt * 1.5;
+        }
+        const ph = t * 1.1 + l.i * .7, floatY = reduce ? 0 : Math.sin(ph) * 5, sway = reduce ? 0 : Math.sin(ph * .8) * .05;
+        l.m.position.set(l.home.x + s.ox, l.home.y + s.oy + floatY, Math.sin(ph * .6) * 10);
+        l.m.rotation.z = s.rz + sway;
+        l.m.scale.setScalar(Math.max(.001, s.sc));
+        l.m.material.uniforms.uWob.value = reduce ? 0 : s.wob;
+        l.m.material.uniforms.uFade.value = Math.min(1, Math.max(0, s.sc));
+      });
+      floaters.forEach(f => {
+        const d = f.userData; f.position.y += d.vy * elapsed; f.position.x += Math.sin(t * .9 + d.ph) * 8 * elapsed;
+        f.scale.setScalar(d.s * (1 + Math.sin(t * 3 + d.ph) * .04));
+        if (f.position.y > view.t + 30) { f.position.y = view.b - 20; f.position.x = view.l + Math.random() * (view.r - view.l); }
+      });
+      for (let i = pops.length - 1; i >= 0; i--) {
+        const p = pops[i], d = p.userData; d.life -= elapsed * 1.4; d.vy -= 40 * elapsed;
+        p.position.x += d.vx * elapsed; p.position.y += d.vy * elapsed; p.material.uniforms.uFade.value = Math.max(0, d.life);
+        if (d.life <= 0) { scene.remove(p); p.material.dispose(); allMats.splice(allMats.indexOf(p.material), 1); pops.splice(i, 1); }
+      }
+      renderer.render(scene, cam);
+      if (visible) raf = requestAnimationFrame(tick);
+    }
+    layout();
+    renderer.render(scene, cam);
+    let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layout, 150); });
+    return {
+      start() { running = true; last = t0 = performance.now(); if (!raf) raf = requestAnimationFrame(tick); },
+      relayout: layout,
+      jiggle() { letters.forEach((l, i) => setTimeout(() => { l.s.vy += 120; l.s.wob = 4; }, i * 35)); }
     };
   };
 

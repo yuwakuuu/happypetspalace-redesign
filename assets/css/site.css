@@ -519,7 +519,8 @@ h2 .s{font-family:var(--font-d);font-weight:700;color:var(--pink);font-size:1em}
 
 /* live 3D title */
 .live-title{position:relative;font-size:clamp(54px,7.6vw,112px);line-height:1.12;margin:18px 0 0;min-height:1.2em;color:var(--plum)}
-.live-title .live3d{position:absolute;left:0;top:0;display:block;touch-action:pan-y}
+.live-title .live3d{position:absolute;left:0;top:0;display:block;pointer-events:none}
+.live-title{touch-action:pan-y}
 .live-title.on .t-src{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .page-hero .live-title{font-size:clamp(46px,6.2vw,92px)}
 
@@ -658,3 +659,92 @@ a.feat{color:inherit}
 @media (max-width:640px){.dog-fab .pup-ico{width:54px;height:54px}}
 h2.t-ready{line-height:1.36}   /* inflated 3D words need roomier lines when a heading wraps */
 [hidden]{display:none!important}   /* never let a display rule un-hide something */
+
+/* =========================================================
+   v4 — 🐶 loader / page transition / chat button, music button, phone polish
+   ========================================================= */
+/* one shared "dog on its shadow" unit, used by the loader AND the page wipe so hand-offs line up exactly */
+#loader .ld,#wipe .ld{display:flex;flex-direction:column;align-items:center;gap:0}
+#loader .dog,#wipe .dog{font-size:92px;line-height:1;display:block;transform-origin:50% 100%;animation:dogHop .62s cubic-bezier(.33,0,.5,1) infinite alternate;filter:drop-shadow(0 8px 10px rgba(0,0,0,.12))}
+#loader .shadow,#wipe .shadow{width:70px;height:12px;margin-top:8px;border-radius:50%;background:rgba(42,16,32,.16);animation:dogShadow .62s cubic-bezier(.33,0,.5,1) infinite alternate}
+@keyframes dogHop{from{transform:translateY(-30px) scale(.97,1.03)}to{transform:translateY(0) scale(1.06,.94)}}
+@keyframes dogShadow{from{transform:scaleX(.62);opacity:.55}to{transform:scaleX(1);opacity:1}}
+#loader .bar{margin-top:26px}
+#loader p{margin-top:16px}
+#loader .pct{margin-top:6px}
+#loader.quick{background:var(--plum)}
+#loader.quick .shadow,#wipe .shadow{background:rgba(0,0,0,.28)}
+#wipe{display:grid;place-items:center}
+#wipe .ld{opacity:0;transform:scale(.6);transition:opacity .25s ease .18s,transform .45s var(--spring) .18s}
+#wipe.in .ld{opacity:1;transform:none}
+#wipe span{display:none}
+
+/* chat button + chat avatar */
+.dog-fab .fab-dog{font-size:40px;line-height:1;display:block;transform-origin:50% 85%;animation:fabWag 4s ease-in-out infinite;transition:transform .45s var(--spring)}
+.dog-fab:hover .fab-dog{animation:none;transform:rotate(-12deg) scale(1.12)}
+.dog-fab.talk .fab-dog{animation:fabTalk .3s ease-in-out infinite alternate}
+@keyframes fabWag{0%,82%,100%{transform:rotate(0)}86%{transform:rotate(-12deg)}90%{transform:rotate(10deg)}94%{transform:rotate(-6deg)}}
+@keyframes fabTalk{to{transform:translateY(-3px) scale(1.05)}}
+.chat-head .av{font-size:28px;line-height:1}
+
+/* background music button */
+.mus{position:relative;overflow:hidden}
+.mus .eq{display:flex;gap:2px;align-items:flex-end;height:16px}
+.mus .eq i{width:3px;height:4px;border-radius:2px;background:var(--plum);transition:height .2s}
+.mus[aria-pressed="true"] .eq i{animation:eq 1s ease-in-out infinite alternate}
+.mus[aria-pressed="true"] .eq i:nth-child(2){animation-delay:-.3s}.mus[aria-pressed="true"] .eq i:nth-child(3){animation-delay:-.6s}.mus[aria-pressed="true"] .eq i:nth-child(4){animation-delay:-.15s}
+@keyframes eq{0%{height:3px}100%{height:15px}}
+.mus[aria-pressed="false"]::after{content:"";position:absolute;width:26px;height:2.5px;background:var(--ink-2);rotate:-45deg;border-radius:2px}
+.music-hint{position:fixed;left:50%;bottom:22px;translate:-50% 0;z-index:190;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:999px;padding:10px 16px;font-size:14.5px;display:flex;gap:10px;align-items:center;opacity:0;pointer-events:none;transition:opacity .4s,translate .5s var(--spring)}
+.music-hint.show{opacity:1;translate:-50% -6px;pointer-events:auto}
+.music-hint button{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:6px 12px;font:600 13px var(--font-b);cursor:pointer}
+
+/* ---------- phones ---------- */
+.menu .m-only{display:none}
+@media (max-width:1080px){
+  .menu .m-only{display:block}
+  .menu .m-only a{background:var(--plum);color:#fff!important;justify-content:center;margin-top:6px}
+}
+@media (max-width:640px){
+  .topbar .wrap{padding:6px 0;gap:8px;font-size:13px}
+  .topbar .wrap>a[href^="tel"]{display:none}
+  .nav{top:6px;margin-top:6px;padding:6px;gap:6px;border-radius:18px}
+  .icon-btn{width:40px;height:40px;border-radius:12px}
+  .nav #theme{display:none}
+  .hero{padding:30px 0 50px}
+  .hero-grid{gap:28px}
+  .hero p.sub,.page-hero .sub{font-size:18px;margin:14px 0 22px}
+  .hero .ctas .btn,.page-hero .ctas .btn{flex:1 1 auto}
+  .hero-trust{gap:10px 16px;font-size:14px}
+  .hero-art{max-width:340px}
+  .orbit text{font-size:15px}
+  h2{font-size:clamp(34px,9vw,44px)}
+  .lede{font-size:17.5px}
+  .page-hero{padding:24px 0 40px}
+  .photo-card{border-width:5px;border-radius:24px}
+  .marquee .track{font-size:20px}
+  .stats{gap:10px}
+  .stat b{font-size:38px}
+  .day{height:300vh}
+  .moment{min-height:250px;padding:22px}
+  .planner{gap:14px}.panel{padding:20px}
+  .tabs{width:100%}.tabs button{flex:1 1 auto;padding:10px 8px;font-size:14.5px}
+  .price-grid{gap:10px}.pcard{padding:20px}.pcard .amt{font-size:42px}
+  .ptable{font-size:15px}
+  .cam-band{padding:24px}
+  .screen .walker{font-size:38px}
+  .faq summary{font-size:18px}
+  details .ans{padding-right:0}
+  .cta h2{font-size:clamp(40px,11vw,56px)}
+  .cta-band h2{font-size:36px}
+  .loc-info{padding:22px}.map,.map iframe{min-height:300px}
+  .book-frame iframe{height:1300px}
+  .chat{bottom:88px;height:calc(100svh - 104px);border-radius:22px}
+  .music-hint{bottom:96px;width:max-content;max-width:calc(100vw - 32px)}
+  #loader .dog,#wipe .dog{font-size:78px}
+}
+/* no hover-only effects on touch screens */
+@media (hover:none){
+  .tilt{transform:none!important}
+  .svc:hover,.feat:hover,.pcard:hover,.post:hover,.ev:hover,.why:hover{transform:none}
+}
