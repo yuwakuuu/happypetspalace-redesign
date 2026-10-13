@@ -5,7 +5,7 @@
   const fine = matchMedia('(pointer:fine)').matches;
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const root = document.documentElement;
-  const sfx = (n, p) => window.HPPSfx && window.HPPSfx.play(n, p);
+  const sfx = (n, p, k) => window.HPPSfx && window.HPPSfx.play(n, p, k);
   const on = (sel, fn) => { const el = typeof sel === 'string' ? $(sel) : sel; if (el) fn(el); };
 
   /* ================= shared business data (also used by chat.js) ================= */
@@ -175,13 +175,23 @@
     const el = e.target.closest && e.target.closest(SOUND_HOVER);
     if (el && !el.contains(e.relatedTarget)) sfx('hover', .9 + Math.random() * .3);
   });
+  // a happy "arf arf!" for anything that books
+  const bookish = t => t.closest('a[href*="book.html"],a[href*="booking.moego"],#sBook') || (b => b && /\bbook\b/i.test(b.textContent) ? b : null)(t.closest('a,button'));
   document.addEventListener('click', e => {
     const t = e.target;
+    if (e.barked) return;                                   // already barked (dog count went up)
+    if (bookish(t)) { sfx('bark', 1.05 + Math.random() * .1, 2); return; }
     if (t.closest('.btn,.chip,.tabs button,.seg button,.loc-pick button,.step')) sfx('click', .95 + Math.random() * .15);
     else if (t.matches('input[type=checkbox]')) sfx(t.checked ? 'pop' : 'squish');
     else if (t.closest('summary')) sfx('pop', .9);
   });
   document.addEventListener('input', e => { if (e.target.type === 'range') sfx('tick'); });
+  document.addEventListener('focusin', e => { if (e.target.matches('select[name="dogs"]')) e.target.dataset.prev = e.target.value; });
+  document.addEventListener('change', e => {   // more dogs in the chat booking form -> one arf per new pup
+    const t = e.target; if (!t.matches('select[name="dogs"]')) return;
+    const add = +t.value - +(t.dataset.prev || 1); t.dataset.prev = t.value;
+    if (add > 0) sfx('bark', 1.1, Math.min(3, add));
+  });
 
   /* ================= reveals & counters ================= */
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12, rootMargin: '0px 0px -30px 0px' });
@@ -291,6 +301,114 @@
       el.addEventListener('dblclick', () => { ctl.jiggle(); sfx('boing', 1.2); });
     }).catch(err => console.warn('live title', err));
     titleJobs.push(job);
+  });
+
+  /* ================= scroll wheel: fast navigation of the homepage =================
+     A dial on the left edge shows how far down the page you are and which section you're in. Scroll over it to
+     hop section to section; click it to open the big wheel: every section sits around the rim — drag around the
+     ring to scrub through the page, or tap a stop to jump straight there. */
+  on('#about', () => {
+    const STOPS = [['top', '🏰', 'Welcome'], ['about', '🐾', 'About us'], ['trophy', '🏆', 'Voted best 6×'], ['services', '🛎️', 'Services'],
+      ['why', '💜', 'Why us'], ['pricing', '🏷️', 'Pricing'], ['day', '☀️', 'A day here'], ['plan', '🧮', 'Plan a stay'],
+      ['new-clients', '📋', 'New clients'], ['staff', '👋', 'Meet the pack'], ['reviews', '⭐', 'Reviews'], ['instagram', '📸', 'Instagram'],
+      ['story', '📖', 'Our story'], ['events', '🎉', 'Events'], ['webcams', '🎥', 'Webcams'], ['locations', '📍', 'Locations'],
+      ['faq', '❓', 'FAQ'], ['cta', '📅', 'Book a stay']]
+      .map(([id, e, label]) => ({ id, e, label, el: document.getElementById(id) })).filter(s => s.el);
+    if (STOPS.length < 3) return;
+    const N = STOPS.length, SLOT = 360 / N, SPAN = SLOT * (N - 1);   // stops evenly round the rim; the last slot is the start/end gap
+    const maxY = () => Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    const pad = () => parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const targetY = s => s.id === 'top' ? 0 : Math.min(maxY(), Math.max(0, s.el.getBoundingClientRect().top + scrollY - pad()));
+    let tops = [];
+    const measure = () => { tops = STOPS.map(targetY); for (let i = 1; i < N; i++) tops[i] = Math.max(tops[i], tops[i - 1] + 1); };
+    const yToPos = y => { let i = 0; while (i < N - 1 && y >= tops[i + 1]) i++; if (i >= N - 1) return N - 1; return i + Math.min(1, Math.max(0, (y - tops[i]) / (tops[i + 1] - tops[i]))); };
+    const posToY = p => { const i = Math.min(N - 2, Math.floor(p)); return tops[i] + (tops[i + 1] - tops[i]) * Math.min(1, Math.max(0, p - i)); };
+    const cur = () => Math.min(N - 1, Math.floor(yToPos(scrollY + 2) + 1e-6));
+    const go = (y, smooth) => scrollTo({ top: y, behavior: smooth && !reduce ? 'smooth' : 'instant' });
+
+    // the small dial
+    const knob = document.createElement('button');
+    knob.className = 'nw-knob'; knob.type = 'button'; knob.setAttribute('aria-label', 'Open the quick navigation wheel'); knob.setAttribute('aria-haspopup', 'dialog');
+    knob.innerHTML = '<span class="nw-ring" aria-hidden="true"></span><span class="nw-e" aria-hidden="true"></span><span class="nw-tip"></span>';
+    // the big wheel
+    const pop = document.createElement('div');
+    pop.className = 'nw-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-modal', 'true'); pop.setAttribute('aria-label', 'Quick navigation wheel'); pop.hidden = true;
+    pop.innerHTML = `<div class="nw-wheel"><div class="nw-track" aria-hidden="true"></div><div class="nw-fill" aria-hidden="true"></div>
+      <div class="nw-marker" aria-hidden="true"><i>🐾</i></div>
+      ${STOPS.map((s, i) => `<button type="button" class="nw-stop" data-i="${i}" style="--a:${i * SLOT}deg" aria-label="${s.label}"><i>${s.e}</i></button>`).join('')}
+      <div class="nw-hub"><b class="nw-he"></b><strong class="nw-hl"></strong><small class="nw-hp"></small><em>Drag around the wheel · tap a stop</em></div>
+      <button type="button" class="nw-x" aria-label="Close">✕</button></div>`;
+    document.body.append(knob, pop);
+    const wheel = $('.nw-wheel', pop), stops = $$('.nw-stop', pop), marker = $('.nw-marker', pop);
+    let last = -1, preview = -1;
+    const paint = () => {
+      const p = yToPos(scrollY + 2), i = cur(), frac = scrollY / maxY();
+      knob.style.setProperty('--p', frac); pop.style.setProperty('--ang', (Math.min(p, N - 1) * SLOT) + 'deg');
+      if (i !== last) {
+        last = i; $('.nw-e', knob).textContent = STOPS[i].e; $('.nw-tip', knob).textContent = STOPS[i].label;
+        stops.forEach((b, k) => b.classList.toggle('on', k === i));
+      }
+      const show = STOPS[preview >= 0 ? preview : i];
+      $('.nw-he', pop).textContent = show.e; $('.nw-hl', pop).textContent = show.label;
+      $('.nw-hp', pop).textContent = preview >= 0 ? 'Tap to jump here' : `${Math.round(frac * 100)}% down the page`;
+    };
+    let raf = 0; const queue = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; paint(); }); };
+    measure(); paint();
+    addEventListener('scroll', queue, { passive: true });
+    addEventListener('resize', () => { measure(); queue(); });
+    addEventListener('load', () => { measure(); queue(); });
+    setTimeout(() => { measure(); queue(); }, 2500);   // images and 3D titles settle
+
+    // scroll over the dial (or the open wheel) = hop one section at a time
+    let wheelLock = 0;
+    const hop = e => {
+      e.preventDefault(); const now = performance.now(); if (now < wheelLock) return; wheelLock = now + 260;
+      measure(); const i = Math.min(N - 1, Math.max(0, cur() + (e.deltaY > 0 ? 1 : -1)));
+      go(tops[i], true); sfx('tick'); sfx('hover', .8 + i * .03);
+    };
+    knob.addEventListener('wheel', hop, { passive: false });
+    wheel.addEventListener('wheel', hop, { passive: false });
+
+    // open / close
+    const open = () => { measure(); preview = -1; paint(); pop.hidden = false; requestAnimationFrame(() => pop.classList.add('in')); knob.setAttribute('aria-expanded', 'true'); sfx('open'); setTimeout(() => stops[cur()].focus({ preventScroll: true }), 60); };
+    const close = () => { if (pop.hidden) return; pop.classList.remove('in'); knob.setAttribute('aria-expanded', 'false'); sfx('close'); setTimeout(() => { pop.hidden = true; }, reduce ? 0 : 260); knob.focus({ preventScroll: true }); };
+    knob.addEventListener('click', open);
+    $('.nw-x', pop).addEventListener('click', close);
+    pop.addEventListener('click', e => { if (e.target === pop) close(); });
+    addEventListener('keydown', e => {
+      if (pop.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      if (/^Arrow(Right|Down|Left|Up)$/.test(e.key)) { e.preventDefault(); const i = Math.min(N - 1, Math.max(0, cur() + (/Right|Down/.test(e.key) ? 1 : -1))); go(tops[i], true); stops[i].focus({ preventScroll: true }); sfx('tick'); }
+    });
+
+    // drag around the ring to scrub; a tap on a stop jumps there
+    const angleAt = e => { const r = wheel.getBoundingClientRect(); return (Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) * 180 / Math.PI + 360) % 360; };
+    let drag = null;
+    wheel.addEventListener('pointerdown', e => {
+      if (e.target.closest('.nw-x,.nw-hub')) return;
+      measure(); drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false, stop: e.target.closest('.nw-stop'), last: yToPos(scrollY + 2) };
+      wheel.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    wheel.addEventListener('pointermove', e => {
+      const over = e.target.closest && e.target.closest('.nw-stop'); preview = over && !drag ? +over.dataset.i : -1;
+      if (!drag || e.pointerId !== drag.id) { queue(); return; }
+      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+      drag.moved = true; wheel.classList.add('dragging');
+      let p = Math.min(SPAN, angleAt(e)) / SLOT;
+      if (angleAt(e) > SPAN + SLOT / 2) p = 0;                                       // in the start/end gap, past the top: stay at the start
+      if (Math.abs(p - drag.last) > N / 2) p = drag.last < N / 2 ? 0 : N - 1;          // no wrapping from the end to the start
+      if (Math.floor(p) !== Math.floor(drag.last)) sfx('tick');
+      drag.last = p; go(posToY(p), false);
+    });
+    const end = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      wheel.classList.remove('dragging');
+      if (!drag.moved && drag.stop) { const i = +drag.stop.dataset.i; sfx('click'); go(tops[i], true); setTimeout(close, reduce ? 0 : 420); }
+      drag = null;
+    };
+    wheel.addEventListener('pointerup', end); wheel.addEventListener('pointercancel', end);
+    wheel.addEventListener('pointerleave', () => { if (!drag) { preview = -1; queue(); } });
+    stops.forEach(b => b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const i = +b.dataset.i; go(tops[i], true); setTimeout(close, reduce ? 0 : 420); } }));
   });
 
   /* ================= Instagram embeds (both locations) ================= */
@@ -436,8 +554,10 @@
   /* ================= estimator ================= */
   on('#nights', () => {
     const P = { loc: 'mesa', dogs: 1 };
-    const seg = (id, key, cast) => $$('#' + id + ' button').forEach(b => b.onclick = () => {
+    const seg = (id, key, cast) => $$('#' + id + ' button').forEach(b => b.onclick = ev => {
+      const old = P[key];
       $$('#' + id + ' button').forEach(x => x.setAttribute('aria-pressed', x === b)); P[key] = cast(b.dataset.v); plan(true);
+      if (key === 'dogs' && P.dogs > old) { sfx('bark', 1.15 - P.dogs * .03, Math.min(3, P.dogs - old)); ev.barked = true; }   // one arf per pup added
     });
     seg('pLoc', 'loc', String); seg('pDogs', 'dogs', Number);
     ['nights', 'deluxe', 'cam', 'play', 'late', 'mil'].forEach(id => $('#' + id).addEventListener('input', () => plan(id !== 'nights')));
