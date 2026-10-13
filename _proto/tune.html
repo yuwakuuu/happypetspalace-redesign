@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><title>tune</title>
+<style>body{background:#fff;margin:20px;font-family:sans-serif}.row{display:flex;gap:16px;align-items:center;margin:4px 0}.row small{width:150px}</style>
+<div id="out"></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FontLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/BufferGeometryUtils.js"></script>
+<script src="../assets/fonts/fredoka.js"></script>
+<script src="../assets/js/puffy3d.js"></script>
+<script>
+const out=document.getElementById('out');
+for (const v of [[.26,.08,-.05],[.3,.07,-.04],[.22,.065,-.035],[.34,.075,-.05]]) {
+  HPP3D.inflate.fredoka=v;
+  const row=document.createElement('div'); row.className='row'; row.innerHTML='<small>'+v.join(' ')+'</small>';
+  for (const [w,c] of [['Thank','plum'],['You','teal'],['Pups!','pink'],['@gaQR','butter']]) { const r=HPP3D.word(w,{color:HPP3D.colors[c],px:100}); r.canvas.style.height=(r.em.h*100)+'px'; row.append(r.canvas); }
+  out.append(row);
+}
+</script>
