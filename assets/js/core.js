@@ -77,7 +77,7 @@
     let visited = false; try { visited = !!sessionStorage.getItem('hpp-visited'); sessionStorage.setItem('hpp-visited', '1'); } catch {}
     if (!ld) { readyResolve(); return; }
     if (visited) ld.classList.add('quick');
-    const bar = $('.bar i', ld), paw = $('.bar b', ld), pct = $('.pct', ld), msg = $('p', ld);
+    const bar = $('.bar i', ld), paw = $('.bar b', ld), pct = $('.pct', ld), msg = visited ? $('.tag', ld) : $('.ld > p:not(.tag)', ld);
     const lines = ['Fetching the fun…', 'Inflating the letters…', 'Fluffing the fur…', 'Filling the splash pools…', 'Blowing bubbles…', 'Waking up the pack…'];
     let li = 0, shown = 0, target = 0;
     const mi = setInterval(() => { if (msg) msg.textContent = lines[li = (li + 1) % lines.length]; }, 900);
@@ -144,6 +144,7 @@
   });
 
   /* ================= page-to-page paw wipe ================= */
+  const FUN_LINES = ['Fetching the fun…', 'Sniffing out the page…', 'Chasing bubbles…', 'Wagging over…', 'Zooming to the next yard…', 'Grabbing a squeaky toy…'];
   on('#wipe', wipe => {
     document.addEventListener('click', e => {
       const a = e.target.closest && e.target.closest('a[href]');
@@ -154,6 +155,7 @@
       if (href.split(/[?#]/)[0] === here && href.includes('#')) return;  // same-page anchor
       e.preventDefault();
       wipe.style.setProperty('--wx', e.clientX + 'px'); wipe.style.setProperty('--wy', e.clientY + 'px');
+      on($('.tag', wipe), t => t.textContent = FUN_LINES[Math.random() * FUN_LINES.length | 0]);
       wipe.classList.add('in'); sfx('whoosh');
       setTimeout(() => location.href = href, reduce ? 0 : 480);
     });
@@ -282,6 +284,20 @@
       el.addEventListener('dblclick', () => { ctl.jiggle(); sfx('boing', 1.2); });
     }).catch(err => console.warn('live title', err));
     titleJobs.push(job);
+  });
+
+  /* ================= 3D trophy stage ================= */
+  on('#trophy3d', host => {
+    const stage = $('#trophyStage');
+    const lightYears = () => $$('.years span', stage).forEach((y, i) => setTimeout(() => { y.style.transitionDelay = '0s'; y.style.opacity = 1; y.style.transform = 'none'; sfx('pop', 1 + i * .08); }, 250 + i * 160));
+    const ctl = window.HPPTrophy ? window.HPPTrophy(host, {
+      onEvent(kind, to) {
+        if (kind === 'on') { sfx('click', .6); setTimeout(() => sfx('whoosh'), 120); }
+        if (kind === 'lit') { stage.classList.add('lit'); lightYears(); }
+        if (kind === 'morph') { sfx('sparkle'); sfx('whoosh'); }
+      }
+    }) : null;
+    if (!ctl) { on($('.fallback', host), f => f.hidden = false); new IntersectionObserver(es => { if (es[0].isIntersecting) { stage.classList.add('lit'); lightYears(); } }, { threshold: .4 }).observe(stage); }
   });
 
   /* ================= scroll-linked motion ================= */

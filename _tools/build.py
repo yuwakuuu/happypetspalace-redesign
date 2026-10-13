@@ -12,7 +12,7 @@ Macros available inside pages:
     [[book_cta]]        "Ready to book?" band with both locations + phone
     [[book_buttons]]    the three booking buttons on their own
 """
-import hashlib, html, pathlib, re
+import hashlib, html, json, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / '_src'
@@ -29,6 +29,23 @@ BOOK_CTA = f'''<section style="padding-top:20px"><div class="wrap"><div class="c
   <div><h2 data-color="white" data-fur="pink">Ready to <span class="s">book?</span></h2><p>Select your nearest location to reserve your spot — or ask Duke, our pup concierge.</p></div>
   <div class="ctas"><a class="btn light magnetic" href="book.html?loc=mesa">Book Mesa <span class="arrow">→</span></a><a class="btn light magnetic" href="book.html?loc=chandler">Book Chandler <span class="arrow">→</span></a><a class="btn ghost magnetic" style="--c:#fff" href="tel:+14802071852">📞 Call</a></div>
 </div></div></section>'''
+
+# 5-star reviews quoted (excerpted) from the public Yelp pages, with attribution — see _src/reviews.json
+REVIEWS = json.loads((SRC / 'reviews.json').read_text(encoding='utf-8'))
+YELP = {'mesa': 'https://www.yelp.com/biz/happy-pets-palace-and-playground-mesa', 'chandler': 'https://www.yelp.com/biz/happy-pets-palace-chandler-chandler'}
+def review_card(r, i=0):
+    when = f" · {r['date']}" if r['date'] else ''
+    return (f'<figure class="rv" style="--i:{i % 6}"><div class="stars" aria-label="5 out of 5 stars">★★★★★</div>'
+            f'<blockquote>“{html.escape(r["text"])}”</blockquote>'
+            f'<figcaption><span class="av">{html.escape(r["name"][0])}</span><span><b>{html.escape(r["name"])}</b><small>{html.escape(r["from"])}{when}</small></span>'
+            f'<a class="src" href="{YELP[r["loc"]]}" target="_blank" rel="noopener">{"Mesa" if r["loc"] == "mesa" else "Chandler"} · Yelp ↗</a></figcaption></figure>')
+def reviews_strip():
+    half = (len(REVIEWS) + 1) // 2
+    rows = [REVIEWS[:half], REVIEWS[half:]]
+    out = ''.join(f'<div class="rv-row{" rev" if k else ""}"><div class="rv-track">{"".join(review_card(r) for r in row * 2)}</div></div>' for k, row in enumerate(rows))
+    return f'<div class="rv-marquee" aria-label="Customer reviews">{out}</div>'
+def reviews_grid():
+    return '<div class="rv-grid">' + ''.join(review_card(r, i) for i, r in enumerate(REVIEWS)).replace('<figure class="rv"', '<figure class="rv" data-reveal') + '</div>'
 
 def attrs(s):
     return {m.group(1): m.group(3) if m.group(3) is not None else m.group(4) for m in re.finditer(r'(\w+)=("([^"]*)"|\'([^\']*)\')', s)}
@@ -64,7 +81,7 @@ def build(page):
             k, _, v = line.partition(':'); meta[k.strip()] = v.strip()
         text = text[m.end():]
     text = re.sub(r'\[\[hero (.*?)\]\]', lambda mm: hero(attrs(mm.group(1))), text, flags=re.S)
-    text = text.replace('[[book_cta]]', BOOK_CTA).replace('[[book_buttons]]', BOOK_BUTTONS)
+    text = text.replace('[[book_cta]]', BOOK_CTA).replace('[[book_buttons]]', BOOK_BUTTONS).replace('[[reviews_strip]]', reviews_strip()).replace('[[reviews_grid]]', reviews_grid())
     name = page.stem
     title = meta.get('title', 'Happy Pets Palace')
     out = layout
