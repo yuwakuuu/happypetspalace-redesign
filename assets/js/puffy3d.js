@@ -425,10 +425,12 @@
     const sphere = new T.SphereGeometry(1, MOBILE ? 18 : 28, MOBILE ? 14 : 20);
     const floaters = [], pops = [];
     const floaterMat = () => { const m = bubbleMat('#bfe6ee'); m.uniforms.uWob.value = 0; allMats.push(m); return m; };
+    let spawnL = 0, spawnR = 1;   // floaters start under the title, then drift up through the whole hero
+    const edgeFade = (x, y, r) => Math.min(1, Math.max(0, Math.min(x - r - view.l, view.r - x - r, view.t - y - r, y + r - view.b) / (SIZE * .7)));
     const spawnFloater = initial => {
       const m = new T.Mesh(sphere, floaterMat()), s = 4 + Math.random() * 14;
       m.scale.setScalar(s);
-      m.position.set(view.l + Math.random() * (view.r - view.l), initial ? view.b + Math.random() * (view.t - view.b) : view.b - 20, (Math.random() - .5) * 120);
+      m.position.set(spawnL + Math.random() * (spawnR - spawnL), initial ? view.b + Math.random() * (view.t - view.b) : view.b - s, (Math.random() - .5) * 120);
       m.userData = { vy: 10 + Math.random() * 16, ph: Math.random() * 6.28, s };
       scene.add(m); floaters.push(m);
     };
@@ -456,13 +458,16 @@
       }));
       Hh = Math.ceil(lines.length * lineH / SIZE * px + px * .45);
       el.style.height = Hh + 'px';
-      const oL = px * .5, oR = px * .5, oT = px * .3, oB = px * .4, u = SIZE / px;
+      // the canvas reaches the hero's edges (it clips there anyway), so bubbles never meet a hard cut-off
+      const hero = el.closest('.hero') || el.parentElement, er = el.getBoundingClientRect(), hr = hero.getBoundingClientRect();
+      const oL = Math.max(px * .5, er.left - hr.left), oR = Math.max(px * .5, hr.right - er.left - W), oT = Math.max(px * .3, er.top - hr.top), oB = px * .6, u = SIZE / px;
       canvas.style.cssText = `left:${-oL}px;top:${-oT}px;width:${W + oL + oR}px;height:${Hh + oT + oB}px`;
       renderer.setPixelRatio(Math.min(MOBILE ? 1.5 : 2, devicePixelRatio || 1));
       renderer.setSize(W + oL + oR, Hh + oT + oB, false);
       const top = SIZE * 1.0, units = Hh / px * SIZE, x0 = -SIZE * .04;
       view = { l: x0 - oL * u, r: x0 + maxW + oR * u, t: top + oT * u, b: top - units - oB * u };
       Object.assign(cam, { left: view.l, right: view.r, top: view.t, bottom: view.b }); cam.updateProjectionMatrix();
+      spawnL = x0 - SIZE * .2; spawnR = x0 + maxW + SIZE * .2;
       if (!floaters.length) for (let i = 0; i < (MOBILE ? 6 : 11); i++) spawnFloater(true);
     }
     const toLocal = e => { const r = canvas.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); tx = ptr.x; ty = ptr.y; };
@@ -522,11 +527,12 @@
       floaters.forEach(f => {
         const d = f.userData; f.position.y += d.vy * elapsed; f.position.x += Math.sin(t * .9 + d.ph) * 8 * elapsed;
         f.scale.setScalar(d.s * (1 + Math.sin(t * 3 + d.ph) * .04));
-        if (f.position.y > view.t + 30) { f.position.y = view.b - 20; f.position.x = view.l + Math.random() * (view.r - view.l); }
+        if (f.position.y - f.scale.x > view.t) { f.position.y = view.b - d.s; f.position.x = spawnL + Math.random() * (spawnR - spawnL); }
+        f.material.uniforms.uFade.value = edgeFade(f.position.x, f.position.y, f.scale.x);   // soft fade at every edge, never a hard cut
       });
       for (let i = pops.length - 1; i >= 0; i--) {
         const p = pops[i], d = p.userData; d.life -= elapsed * 1.3; d.vy -= 40 * elapsed;
-        p.position.x += d.vx * elapsed; p.position.y += d.vy * elapsed; p.material.uniforms.uFade.value = Math.max(0, d.life);
+        p.position.x += d.vx * elapsed; p.position.y += d.vy * elapsed; p.material.uniforms.uFade.value = Math.max(0, d.life) * edgeFade(p.position.x, p.position.y, p.scale.x);
         if (d.life <= 0) { scene.remove(p); p.material.dispose(); allMats.splice(allMats.indexOf(p.material), 1); pops.splice(i, 1); }
       }
       renderer.render(scene, cam);
