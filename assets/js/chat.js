@@ -7,6 +7,7 @@
    return JSON {answer: "<html or text>"}. Keep API keys on that server, never in this file. */
 (() => {
   const HPP = window.HPP, $ = s => document.querySelector(s);
+  const sfx = (n, p) => window.HPPSfx && window.HPPSfx.play(n, p);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fab = $('#dogFab'), chat = $('#chat'), body = $('#chatBody'), form = $('#chatForm'), input = $('#chatIn'), nudge = $('#nudge');
   const L = HPP.locs, P = HPP.price;
@@ -26,11 +27,11 @@
     const t = add(el('msg bot typing', '<i></i><i></i><i></i>'));
     fab.classList.add('talk');
     await wait(delay ?? Math.min(1100, 350 + html.replace(/<[^>]+>/g, '').length * 6));
-    t.remove(); fab.classList.remove('talk');
+    t.remove(); fab.classList.remove('talk'); sfx('type');
     history.push({ role: 'assistant', text: html.replace(/<[^>]+>/g, ' ') });
     return add(el('msg bot', html));
   };
-  const me = text => { history.push({ role: 'user', text }); return add(el('msg me', esc(text))); };
+  const me = text => { sfx('pop', 1.2); history.push({ role: 'user', text }); return add(el('msg me', esc(text))); };
   const chips = list => {
     const q = el('qr', '');
     list.forEach(([label, act]) => {
@@ -94,6 +95,7 @@
   /* ---------------- handoff helpers ---------------- */
   const mailto = (loc, subject, lines) => `mailto:${L[loc].mail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
   const recap = (title, rows, totalHtml, actions, note) => {
+    sfx('sparkle');
     const r = el('recap', `<h4>${title}</h4>${rows.map(([a, b]) => `<div class="rl"><span>${a}</span><span>${b}</span></div>`).join('')}
       ${totalHtml ? `<div class="tot">${totalHtml}</div>` : ''}${note ? `<p class="mini" style="margin-top:6px;font-size:13px;color:var(--ink-2)">${note}</p>` : ''}<div class="acts"></div>`);
     const acts = r.querySelector('.acts');
@@ -233,15 +235,15 @@
       ['✉️ Send request', mailto(loc, `Pre-screen request: ${d.pets} on ${nice(day)}`, lines)],
       [`📞 Call to confirm`, 'tel:' + HPP.tel, 'teal'],
       ['📅 Hold it on my calendar', null, 'ghost', () => HPP.ics(`${d.pets} pre-screen at Happy Pets Palace (pending)`, new Date(day.getFullYear(), day.getMonth(), day.getDate(), h[0], h[1]), new Date(day.getFullYear(), day.getMonth(), day.getDate(), h[0] + 4, h[1]), L[loc].q, 'Pending confirmation from Happy Pets Palace. Bring vaccine records and a quick-release collar.')],
-      ['📝 New client forms', 'https://happypetspalace.com/new-client-signup/', 'ghost']
+      ['📝 New client forms', 'new-clients.html', 'ghost']
     ], 'Bring: rabies & distemper records, a plastic quick-release collar. Puppies under 6 months need a clear fecal test.');
     chips([['What should I bring?', 'what to bring for pre-screen'], ['Vaccines', 'vaccines']]);
   }
 
   async function simpleService(svc) {
     const info = svc === 'spa'
-      ? ['🛁 Spa services', 'Baths and grooming to send your pup home fresh and fluffy.', 'https://happypetspalace.com/dog-spa-services/']
-      : ['🎓 AKC training', 'AKC training courses — class dates live on our events calendar.', 'https://happypetspalace.com/akc-dog-training/'];
+      ? ['🛁 Spa services', 'Baths and grooming to send your pup home fresh and fluffy.', 'spa.html']
+      : ['🎓 AKC training', 'AKC training courses — class dates live on our events calendar.', 'dog-training.html'];
     await bot(`<b>${info[0]}</b> — ${info[1]} Which location?`);
     const loc = await choose([['📍 Mesa', 'mesa'], ['📍 Chandler', 'chandler']]);
     recap(`${info[0]} · ${L[loc].name}`, [['Details & pricing', 'See service page']], '', [
@@ -253,7 +255,7 @@
   const KB = [
     { k: [/^(hi|hey|hello|howdy|yo|sup)\b/, /good (morning|afternoon|evening)/], a: () => 'Woof woof! 🐶 I’m Duke. Ask me anything about the Palace, or let me help you book.', c: 'home' },
     { k: [/^(thanks|thank you|thx|ty)\b|thanks!?$|awesome|perfect/], a: 'Anytime! *happy tail wag* 🐾 Anything else?', c: 'home' },
-    { k: [/where|address|located|location|directions|map|near me/], a: () => `We have two palaces:<ul><li><b>Mesa</b> — 1918 E McKellips Rd, Mesa 85203</li><li><b>Chandler</b> — 1080 E Pecos Rd, Suite 16, Chandler 85225</li></ul>Same services, same rates — pick the shorter drive! <a href="#locations">See maps →</a>` },
+    { k: [/where|address|located|location|directions|map|near me/], a: () => `We have two palaces:<ul><li><b>Mesa</b> — 1918 E McKellips Rd, Mesa 85203</li><li><b>Chandler</b> — 1080 E Pecos Rd, Suite 16, Chandler 85225</li></ul>Same services, same rates — pick the shorter drive! <a href="mesa.html">Mesa</a> · <a href="chandler.html">Chandler</a>` },
     { k: [/phone|call|contact|email|reach|number/], a: () => `📞 <a href="tel:${HPP.tel}">${HPP.phone}</a> (both locations)<br>✉️ Mesa: <a href="mailto:${L.mesa.mail}">${L.mesa.mail}</a><br>✉️ Chandler: <a href="mailto:${L.chandler.mail}">${L.chandler.mail}</a>` },
     { k: [/board/, /overnight/, /per night|nightly|a night/, /stay/], a: () => `🏰 <b>Boarding</b> (per dog, per night):<ul><li>1 dog — $48</li><li>2 dogs — $44 each</li><li>3 dogs — $43 each</li><li>4 dogs — $42 each</li></ul>Add-ons: Deluxe +$25/night · Camera Villa +$10/night · Group play $24/day · Late checkout $24. Meds are free!`, c: 'board' },
     { k: [/daycare|day care|full day|half day/], a: () => `🎾 <b>Daycare</b>:<ul><li>Full day (up to 12 hrs) — $38</li><li>Half day (up to 5 hrs, pickup by 3 PM) — $33</li><li>Puppy Wednesdays (6mo–1yr) — $33</li><li>Puppy Days (under 6mo) — $30</li></ul>Mon–Fri 6 AM – 6:30 PM. After pre-screening, no reservation needed!`, c: 'day' },
@@ -272,26 +274,26 @@
     { k: [/med(s|ication|icine)|pill|insulin/], a: '💊 Medications are given at <b>no extra charge</b>. Pack an extra day’s worth in case travel plans change.' },
     { k: [/food|feed|\beat\b|meal|diet/], a: '🥣 Please bring your dog’s own food to keep their diet consistent — a little extra for active players. In-house food is available at $2/cup.' },
     { k: [/pack|bring|need to bring/], a: '🎒 For boarding bring: their own food (+ an extra day), any meds, and a plastic quick-release collar. For a pre-screen: vaccine records (rabies & distemper) and the collar. Harnesses come off during play.' },
-    { k: [/\bcam(era)?s?\b|webcam|watch|video|live stream|see my dog/], a: '📹 Live-stream webcams run at both locations! Add a <b>Camera View Villa</b> to boarding for 24/7 viewing (+$10/night), or get a 30-second video texted for $10. <a href="https://happypetspalace.com/about-us/live-web-cams/" target="_blank" rel="noopener">Watch live →</a>' },
+    { k: [/\bcam(era)?s?\b|webcam|watch|video|live stream|see my dog/], a: '📹 Live-stream webcams run at both locations! Add a <b>Camera View Villa</b> to boarding for 24/7 viewing (+$10/night), or get a 30-second video texted for $10. <a href="webcams.html">About our webcams →</a>' },
     { k: [/deluxe|one.?on.?one|1.?on.?1|cuddle/], a: '⭐ <b>Deluxe boarding</b> adds daily one-on-one time and a short video for +$25/night. À la carte: Cuddles in Villa $15, 1-on-1 Fetch $15, Enrichment $15, Treadmill $20.' },
     { k: [/sick|ill|kennel cough|disease|clean|sanit|hygien/], a: '🧼 Risk is low for healthy dogs. We require vaccines, sanitize indoors daily, clean yards twice daily, and use air scrubbers and solid-wall villas. Ask for extra rest during boarding if your pup needs it.' },
     { k: [/flea|tick|parasite|mite/], a: '🐛 Dogs must be free of fleas, ticks and ear mites. If we find any, the bath and removal can cost up to $80 depending on severity and size.' },
     { k: [/bully|pit ?bull|breed|small dog|teacup|tiny|big dog|large dog|aggressive|reactive/], a: '⚖️ Dogs are grouped by size and temperament across separate yards. Teacup pups (10 lb and under) have their own space. We’re one of the few facilities that welcome <b>bully breeds</b>! All dogs must be suitable for group play.' },
-    { k: [/\bforms?\b|paperwork|waiver|sign.?up|register/], a: '📝 You’ll need a <b>Client Profile</b>, <b>Pet Profile</b> and <b>Waiver & Release</b>. <a href="https://happypetspalace.com/new-client-signup/" target="_blank" rel="noopener">Start new client sign-up →</a>' },
-    { k: [/event|meetup|meet up|dog park|social|saturday/], a: '🎉 <b>Free Saturday meetups</b> start Nov 21 at Ruff Ranch Dog Park (Painted Sky Park, Apache Junction):<ul><li>8–9:30 AM Toy Breeds (up to 20 lb)</li><li>10–11:30 AM Featured Breed Group</li><li>12–1:30 PM Large-Breed Puppy Social (under 6mo)</li></ul>You stay with your dog. <a href="#events">Details →</a>' },
-    { k: [/train|akc|obedien|class|manners/], a: '🎓 We offer <b>AKC training courses</b> plus our Canine Enrichment daycare program. <a href="https://happypetspalace.com/akc-dog-training/" target="_blank" rel="noopener">See courses →</a>' },
-    { k: [/spa|bath|groom|nail|wash/], a: '🛁 Our spa does baths and grooming. <a href="https://happypetspalace.com/dog-spa-services/" target="_blank" rel="noopener">See spa services →</a> or call ' + HPP.phone + '.' },
-    { k: [/\brv\b|camper|road trip|adventure/], a: '🚐 Yes, we rent an <b>Adventure RV</b>! <a href="https://happypetspalace.com/adventure-rv-rental/" target="_blank" rel="noopener">Learn more →</a>' },
-    { k: [/portrait|photo|picture/], a: '📸 Our <b>Portrait Studio</b> does seasonal shoots. <a href="https://happypetspalace.com/pet-portrait-studio/" target="_blank" rel="noopener">See the studio →</a>' },
-    { k: [/academy|career|job|hiring|work (here|for you)|employ/], a: '🏅 Check out our <b>Pet Professional Academy</b> for pet-care careers. <a href="https://happypetspalace.com/pet-professional-academy/" target="_blank" rel="noopener">Learn more →</a>' },
-    { k: [/staff|team|manager|employee|who works|linda|amber|lucy/], a: '👋 Our managers are <b>Linda, Amber and Lucy</b>, leading a pack of 25+ pet care specialists — all trained in pet CPR, first aid and canine body language. <a href="#staff">Meet the team →</a>' },
+    { k: [/\bforms?\b|paperwork|waiver|sign.?up|register/], a: '📝 You’ll need a <b>Client Profile</b>, <b>Pet Profile</b> and <b>Waiver & Release</b>. <a href="new-clients.html">Start new client sign-up →</a>' },
+    { k: [/event|meetup|meet up|dog park|social|saturday/], a: '🎉 <b>Free Saturday meetups</b> start Nov 21 at Ruff Ranch Dog Park (Painted Sky Park, Apache Junction):<ul><li>8–9:30 AM Toy Breeds (up to 20 lb)</li><li>10–11:30 AM Featured Breed Group</li><li>12–1:30 PM Large-Breed Puppy Social (under 6mo)</li></ul>You stay with your dog. <a href="events.html">Details →</a>' },
+    { k: [/train|akc|obedien|class|manners/], a: '🎓 We offer <b>AKC training courses</b> plus our Canine Enrichment daycare program. <a href="dog-training.html">See courses →</a>' },
+    { k: [/spa|bath|groom|nail|wash/], a: '🛁 Our spa does baths and grooming. <a href="spa.html">See spa prices →</a> or call ' + HPP.phone + '.' },
+    { k: [/\brv\b|camper|road trip|adventure/], a: '🚐 Yes, we rent an <b>Adventure RV</b>! <a href="adventure-rv.html">Learn more →</a>' },
+    { k: [/portrait|photo|picture/], a: '📸 Our <b>Portrait Studio</b> does seasonal shoots. <a href="portrait-studio.html">See the studio →</a>' },
+    { k: [/academy|career|job|hiring|work (here|for you)|employ/], a: '🏅 Check out our <b>Pet Professional Academy</b> for pet-care careers. <a href="pet-professional-academy.html">Learn more →</a>' },
+    { k: [/staff|team|manager|employee|who works|linda|amber|lucy/], a: '👋 Our managers are <b>Linda, Amber and Lucy</b>, leading a pack of 25+ pet care specialists — all trained in pet CPR, first aid and canine body language. <a href="staff.html">Meet the team →</a>' },
     { k: [/\bpay|credit|cash|\bchecks?\b(?![- ]?(in|out))|visa|amex|card/], a: '💳 We accept cash, check, Visa, American Express, Mastercard & Discover.' },
     { k: [/treat|kong|ice cream|trachea|snack/], a: '🍦 Treats: PB Pumpkin Frozen Kong $5 · Doggy Ice Cream $6 · Beef Trachea $7.' },
-    { k: [/story|owner|founder|history|started|ria/], a: '💜 It all began with Ria, an abandoned Lab–Border Collie puppy. Our founder opened her first facility in 2008, then Mesa on Aug 22, 2014 and Chandler on Dec 12, 2018. <a href="#story">Read more →</a>' },
+    { k: [/story|owner|founder|history|started|ria/], a: '💜 It all began with Ria, an abandoned Lab–Border Collie puppy. Our founder opened her first facility in 2008, then Mesa on Aug 22, 2014 and Chandler on Dec 12, 2018. <a href="about.html">Read more →</a>' },
     { k: [/potty|10 ?pm|night time|overnight check|sleep/], a: '🌙 Every boarder gets an outdoor potty break around <b>10 PM</b> and a check by late-night staff.' },
     { k: [/pool|swim|bubble|agility|play|activit/], a: '🏊 Daily fun: above-ground splash pools, playground & agility gear, chasing bubbles and afternoon <b>story hour</b> — plus fresh water every hour.' },
     { k: [/\bcats?\b|kitten|rabbit|bird/], a: '🐾 Our programs are built around dogs. For other pets, please give us a call at ' + HPP.phone + '.' },
-    { k: [/review|rating|google|best/], a: '⭐ Voted <b>Best Pet Boarding Services in Mesa</b> six years running, and top-rated on Google. <a href="https://happypetspalace.com/reviews/" target="_blank" rel="noopener">Read reviews →</a>' },
+    { k: [/review|rating|google|best/], a: '⭐ Voted <b>Best Pet Boarding Services in Mesa</b> six years running, and top-rated on Google. <a href="reviews.html">Read reviews →</a>' },
     { k: [/\bhours?\b/, /\bopen\b/, /\bclose[sd]?\b/, /what time/, /today/], a: hoursHtml }
   ];
   const FOLLOW = {
@@ -354,7 +356,7 @@
     chips(FOLLOW.home);
   };
   const open = async intent => {
-    chat.classList.add('open'); fab.classList.add('open'); fab.setAttribute('aria-expanded', 'true');
+    chat.classList.add('open'); fab.classList.add('open'); fab.setAttribute('aria-expanded', 'true'); sfx('open');
     nudge.classList.remove('show'); fab.querySelector('.badge-n')?.remove();
     try { sessionStorage.setItem('hpp-nudged', '1'); } catch {}
     if (intent) {
@@ -365,7 +367,7 @@
     } else if (!started) greet();
     setTimeout(() => input.focus({ preventScroll: true }), 300);
   };
-  const close = () => { chat.classList.remove('open'); fab.classList.remove('open'); fab.setAttribute('aria-expanded', 'false'); fab.focus(); };
+  const close = () => { sfx('close'); chat.classList.remove('open'); fab.classList.remove('open'); fab.setAttribute('aria-expanded', 'false'); fab.focus(); };
   fab.addEventListener('click', () => chat.classList.contains('open') ? close() : open());
   $('#chatClose').addEventListener('click', close);
   $('#chatReset').addEventListener('click', () => { body.innerHTML = ''; history.length = 0; flow = null; busy = false; greet(); });

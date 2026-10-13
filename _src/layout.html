@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{doc_title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+<script>try{var t=localStorage.getItem('hpp-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<!-- 3D lettering: three.js r147 classic build (works when the site is opened straight from disk) -->
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FontLoader.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/BufferGeometryUtils.js"></script>
+<script defer src="assets/fonts/fredoka.js"></script>
+<script defer src="assets/js/sfx.js"></script>
+<script defer src="assets/js/puffy3d.js"></script>
+<script defer src="assets/js/fur.js"></script>
+<script defer src="assets/js/core.js"></script>
+<script defer src="assets/js/chat.js"></script>
+</head>
+<body data-page="{{page}}">
+<div id="loader" role="status" aria-label="Loading">
+  <div class="ld">
+    <div class="pup">{{bulldog}}</div>
+    <div class="shadow"></div>
+    <div class="bar"><i></i><b>🐾</b></div>
+    <p>Fetching the fun…</p>
+    <span class="pct">0%</span>
+  </div>
+</div>
+<div id="wipe" aria-hidden="true"><span>🐾</span></div>
+<canvas id="paws" aria-hidden="true"></canvas>
+<div id="progress"></div>
+
+<div class="topbar">
+  <div class="wrap">
+    <span class="status"><span class="dot" id="topDot"></span><span id="topStatus">Checking hours…</span></span>
+    <a class="news" href="events.html"><b>NEW</b> Free Saturday dog park meetups start Nov 21 →</a>
+    <a href="tel:+14802071852">📞 480-207-1852</a>
+  </div>
+</div>
+
+<nav class="nav" id="nav" aria-label="Main">
+  <a class="logo" href="index.html" aria-label="Happy Pets Palace &amp; Playground home"><img src="assets/logo.png" alt="Happy Pets Palace &amp; Playground"></a>
+  <ul class="menu" id="menu">
+    <li><button aria-haspopup="true"{{cur_locations}}>Locations <span class="caret">▼</span></button>
+      <ul class="drop">
+        <li><a href="mesa.html"><span class="em">📍</span>Mesa</a></li>
+        <li><a href="chandler.html"><span class="em">📍</span>Chandler</a></li>
+      </ul></li>
+    <li><button aria-haspopup="true"{{cur_services}}>Services <span class="caret">▼</span></button>
+      <ul class="drop">
+        <li><a href="dog-boarding.html"><span class="em">🏰</span>Dog Boarding</a></li>
+        <li><a href="doggy-daycare.html"><span class="em">🎾</span>Doggy Daycare</a></li>
+        <li><a href="canine-enrichment.html"><span class="em">🧩</span>Canine Enrichment</a></li>
+        <li><a href="puppy-socializing.html"><span class="em">🐶</span>Puppy Socializing</a></li>
+        <li><a href="dog-training.html"><span class="em">🎓</span>Dog Training</a></li>
+        <li><a href="spa.html"><span class="em">🛁</span>Spa Services</a></li>
+        <li><a href="pet-professional-academy.html"><span class="em">🏅</span>Pet Professional Academy</a></li>
+        <li><a href="portrait-studio.html"><span class="em">📸</span>Portrait Studio</a></li>
+        <li><a href="adventure-rv.html"><span class="em">🚐</span>Adventure RV</a></li>
+      </ul></li>
+    <li><a href="index.html#pricing">Pricing</a></li>
+    <li><a href="events.html"{{cur_events}}>Events</a></li>
+    <li><button aria-haspopup="true"{{cur_about}}>About <span class="caret">▼</span></button>
+      <ul class="drop">
+        <li><a href="about.html"><span class="em">💜</span>About Us</a></li>
+        <li><a href="staff.html"><span class="em">👋</span>Our Staff</a></li>
+        <li><a href="webcams.html"><span class="em">📹</span>Live Webcams</a></li>
+        <li><a href="blog.html"><span class="em">📝</span>Blog</a></li>
+        <li><a href="faq.html"><span class="em">❓</span>FAQs</a></li>
+        <li><a href="reviews.html"><span class="em">⭐</span>Reviews</a></li>
+      </ul></li>
+    <li><a href="new-clients.html"{{cur_new}}>New Clients</a></li>
+  </ul>
+  <button class="icon-btn snd" id="snd" aria-label="Toggle sound" aria-pressed="true">🔊</button>
+  <button class="icon-btn" id="theme" aria-label="Toggle dark mode">🌙</button>
+  <button class="icon-btn burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
+  <div class="book-cta" style="position:relative">
+    <ul class="menu" style="display:flex;margin:0"><li>
+      <button class="btn magnetic" aria-haspopup="true" style="padding:12px 20px">Book Now <span class="caret">▼</span></button>
+      <ul class="drop" style="left:auto;right:0;min-width:210px">
+        <li><a href="book.html?loc=mesa"><span class="em">🏰</span>Book Mesa</a></li>
+        <li><a href="book.html?loc=chandler"><span class="em">🏰</span>Book Chandler</a></li>
+        <li><a href="#" data-open-chat="book"><span class="em">🐶</span>Ask Duke to help</a></li>
+      </ul>
+    </li></ul>
+  </div>
+</nav>
+
+<main id="main">
+{{body}}
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="logo" href="index.html" style="display:inline-flex"><img src="assets/logo.png" alt="Happy Pets Palace &amp; Playground"></a>
+        <p style="color:var(--ink-2);margin-top:14px;max-width:300px;font-size:16px">Dog boarding, daycare and grooming in Mesa and Chandler, Arizona. Six years running as Mesa's Best Pet Boarding.</p>
+        <div class="socials">
+          <a href="https://www.facebook.com/happypetspalacemesa" target="_blank" rel="noopener" aria-label="Facebook">f</a>
+          <a href="https://www.instagram.com/happypetspalacemesa" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+          <a href="https://www.youtube.com/channel/UCDkNALJrFr_xBVoTshVaLCw" target="_blank" rel="noopener" aria-label="YouTube">▶</a>
+        </div>
+      </div>
+      <div><h4>Services</h4><ul>
+        <li><a href="dog-boarding.html">Dog Boarding</a></li>
+        <li><a href="doggy-daycare.html">Doggy Daycare</a></li>
+        <li><a href="canine-enrichment.html">Canine Enrichment</a></li>
+        <li><a href="puppy-socializing.html">Puppy Socializing</a></li>
+        <li><a href="dog-training.html">Dog Training</a></li>
+        <li><a href="spa.html">Spa Services</a></li>
+      </ul></div>
+      <div><h4>More</h4><ul>
+        <li><a href="pet-professional-academy.html">Pet Professional Academy</a></li>
+        <li><a href="portrait-studio.html">Portrait Studio</a></li>
+        <li><a href="adventure-rv.html">Adventure RV</a></li>
+        <li><a href="events.html">Events</a></li>
+        <li><a href="blog.html">Blog</a></li>
+      </ul></div>
+      <div><h4>About</h4><ul>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="staff.html">Our Staff</a></li>
+        <li><a href="webcams.html">Live Webcams</a></li>
+        <li><a href="reviews.html">Reviews</a></li>
+        <li><a href="faq.html">FAQs</a></li>
+        <li><a href="new-clients.html">New Clients</a></li>
+      </ul></div>
+      <div><h4>Visit &amp; book</h4><ul>
+        <li><a href="mesa.html">Mesa location</a></li>
+        <li><a href="chandler.html">Chandler location</a></li>
+        <li><a href="book.html">Book online</a></li>
+        <li><a href="tel:+14802071852">480-207-1852</a></li>
+      </ul></div>
+    </div>
+    <div class="legal"><span>© <span id="yr"></span> Happy Pets Palace &amp; Playground®</span><span>1918 E McKellips Rd, Mesa · 1080 E Pecos Rd #16, Chandler</span></div>
+  </div>
+</footer>
+
+<button class="dog-fab" id="dogFab" aria-label="Chat with Duke, our bulldog concierge" aria-expanded="false" aria-controls="chat">
+  <span class="nudge" id="nudge">Woof! Need help booking? 🐾</span>
+  {{bulldog}}
+</button>
+<div class="chat" id="chat" role="dialog" aria-label="Duke the bulldog concierge" aria-modal="false">
+  <div class="chat-head">
+    <span class="av">{{bulldog}}</span>
+    <div><h3>Duke</h3><small><span class="dot"></span>Palace concierge · FAQ, booking &amp; scheduling</small></div>
+    <button class="x" id="chatReset" aria-label="Start over" title="Start over">↺</button>
+    <button class="x" id="chatClose" aria-label="Close chat" style="margin-left:6px">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody" aria-live="polite"></div>
+  <div class="chat-foot">
+    <form id="chatForm" autocomplete="off"><input id="chatIn" placeholder="Ask about prices, vaccines, hours…" aria-label="Message Duke"><button aria-label="Send">➤</button></form>
+    <div class="hint">Duke answers from our published policies. Bookings are confirmed by our team.</div>
+  </div>
+</div>
+</body>
+</html>
