@@ -150,6 +150,49 @@
     addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true); addEventListener('blur', up); addEventListener('dragend', up);
   }
 
+  /* ================= homepage categories: everything below the hero is tucked behind six buttons =================
+     One category opens at a time, right under the buttons. Links to a section inside a category (#pricing,
+     index.html#plan from another page...) open that category first, then scroll to the section. */
+  on('.cat-hub', hub => {
+    const btns = $$('.cat-btn', hub), panels = $$('.cat-panel');
+    const scrollToEl = el => { const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+      scrollTo({ top: el.getBoundingClientRect().top + scrollY - pad + 10, behavior: reduce ? 'instant' : 'smooth' }); };
+    const show = (id, target) => {
+      panels.forEach(p => { const on = p.id === 'cat-' + id; p.hidden = !on; p.classList.toggle('open', on); });
+      btns.forEach(b => { const on = b.dataset.cat === id; b.setAttribute('aria-selected', on); b.classList.toggle('on', on); });
+      hub.classList.toggle('has-open', !!id);
+      if (!id) return;
+      const panel = $('#cat-' + id);
+      $$('[data-reveal]', panel).forEach(observe);           // its animations and 3D headings start now that it's visible
+      dispatchEvent(new Event('resize')); dispatchEvent(new Event('scroll'));
+      setTimeout(() => scrollToEl(target || panel), 30);
+    };
+    btns.forEach(b => b.addEventListener('click', () => {
+      const open = b.classList.contains('on'); sfx(open ? 'close' : 'open');
+      show(open ? null : b.dataset.cat);
+      if (open) scrollToEl($('#explore'));
+      history.replaceState(null, '', open ? location.pathname : '#' + b.dataset.cat);
+    }));
+    $$('[data-cat-close]').forEach(x => x.addEventListener('click', () => { sfx('close'); show(null); scrollToEl($('#explore')); history.replaceState(null, '', location.pathname); }));
+    // #pricing, #plan, #faq... anywhere on the site: open its category, then go there
+    const openFor = hash => {
+      const id = decodeURIComponent((hash || '').slice(1)); if (!id) return false;
+      if (btns.some(b => b.dataset.cat === id)) { show(id); return true; }
+      const el = document.getElementById(id), panel = el && el.closest('.cat-panel');
+      if (!panel) return false;
+      show(panel.id.slice(4), el); return true;
+    };
+    document.addEventListener('click', e => {
+      const a = e.target.closest && e.target.closest('a[href*="#"]'); if (!a) return;
+      const url = new URL(a.href, location.href);
+      const page = path => path.replace(/\/index\.html$/, '/');   // "/" and "/index.html" are the same homepage
+      if (page(url.pathname) !== page(location.pathname) || !url.hash) return;
+      if (openFor(url.hash)) { e.preventDefault(); history.replaceState(null, '', url.hash); }
+    });
+    addEventListener('hashchange', () => openFor(location.hash));
+    if (location.hash) setTimeout(() => openFor(location.hash), 60);
+  });
+
   /* ================= page-to-page paw wipe ================= */
   const FUN_LINES = ['Fetching the fun…', 'Sniffing out the page…', 'Chasing bubbles…', 'Wagging over…', 'Zooming to the next yard…', 'Grabbing a squeaky toy…'];
   on('#wipe', wipe => {
@@ -237,7 +280,7 @@
     if (h.dataset.dressed || (!can3d && !canFur)) return;
     h.dataset.dressed = '1';
     const fs = parseFloat(getComputedStyle(h).fontSize) || 64, px = Math.max(80, Math.min(120, fs));
-    const C = H3.colors || {}, color = C[h.dataset.color || 'plum'] || '#c23a8c', hue = h.dataset.fur || 'pink';
+    const C = H3.colors || {}, color = C[h.dataset.color || 'plum'] || '#2f6fd6', hue = h.dataset.fur || 'pink';
     const accentColor = C[h.dataset.accent || h.dataset.fur || 'teal'] || C.teal;
     const words = wordsOf(h); if (!words.length) return;
     const src = document.createElement('span'); src.className = 't-src'; src.textContent = h.textContent.trim().replace(/\s+/g, ' ');
@@ -246,6 +289,7 @@
       let r = null;
       try { r = fur && canFur ? H3.fur(w, { px, hue }) : can3d ? H3.word(w, { color: accent ? accentColor : color, px }) : null; } catch (err) { console.warn('title render', err); }
       if (!r) return;   // give up gracefully, keep the plain heading
+      if (r.draw && H3.grassLive) H3.grassLive(r);   // grass sways and parts under the pointer
       parts.push(placeWord(r, fur ? 'wfur' : 'w3d', w), document.createTextNode(' '));
     }
     h.textContent = ''; h.append(src, ...parts); h.classList.add('t-ready');
@@ -254,7 +298,7 @@
   const fontsReady = () => Promise.race([Promise.all([document.fonts.load('700 1em Fredoka'), document.fonts.ready]), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
   if (titleHeads.length && (can3d || canFur)) {
     const ready = fontsReady();
-    const above = titleHeads.filter(h => h.getBoundingClientRect().top < innerHeight * 1.3);
+    const above = titleHeads.filter(h => h.offsetParent && h.getBoundingClientRect().top < innerHeight * 1.3);   // skip closed categories
     titleJobs.push(ready.then(() => new Promise(r => { let i = 0; const next = () => { if (i >= above.length) return r(); dress(above[i++]); setTimeout(next, 0); }; next(); })));
     const lio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { lio.unobserve(e.target); ready.then(() => dress(e.target)); } }), { rootMargin: '900px 0px' });
     titleHeads.forEach(h => lio.observe(h));
@@ -271,7 +315,7 @@
       sfx('fluff'); sfx('pop', 1.3);
       // re-fluff: brush the fur a new way
       const h = w.closest('h1,h2,.dress'), fs = parseFloat(getComputedStyle(h).fontSize) || 64;
-      try { const r = H3.fur(w.dataset.word, { px: Math.max(80, Math.min(120, fs)), hue: h.dataset.fur || 'pink', seed: Math.random() * 1e9 | 0 }); const cv = w.querySelector('canvas'); r.canvas.style.cssText = cv.style.cssText; cv.replaceWith(r.canvas); } catch {}
+      try { const r = H3.fur(w.dataset.word, { px: Math.max(80, Math.min(120, fs)), hue: h.dataset.fur || 'pink', seed: Math.random() * 1e9 | 0 }); const cv = w.querySelector('canvas'); r.canvas.style.cssText = cv.style.cssText; cv.replaceWith(r.canvas); if (r.draw && H3.grassLive) H3.grassLive(r); } catch {}
     } else sfx('boing', .9 + Math.random() * .3);
   });
 
@@ -281,7 +325,8 @@
     const words = [];
     el.childNodes.forEach(n => {
       const accent = n.nodeType === 1 && n.classList.contains('s');
-      (n.textContent || '').trim().split(/\s+/).filter(Boolean).forEach(w => words.push({ text: w, color: H3.colors[accent ? (el.dataset.accent || 'teal') : (el.dataset.color || 'plum')] }));
+      const grass = n.nodeType === 1 && n.classList.contains('grass');   // <span class="grass"> -> grass word (bubble titles)
+      (n.textContent || '').trim().split(/\s+/).filter(Boolean).forEach(w => words.push({ text: w, grass, color: H3.colors[accent ? (el.dataset.accent || 'teal') : (el.dataset.color || 'plum')] }));
     });
     const src = document.createElement('span'); src.className = 't-src'; src.textContent = el.textContent.trim().replace(/\s+/g, ' ');
     const job = fontsReady().then(() => {
@@ -290,7 +335,9 @@
       const bubble = el.dataset.style === 'bubble' && H3.bubbles;
       const ctl = (bubble ? H3.bubbles : H3.live)(el, words, {
         onHit(kind, l) {
-          if (kind === 'hover') sfx(bubble ? 'bloop' : 'pop', .8 + (l.i % 8) * .06);
+          if (kind === 'rustle') sfx('rustle', .9 + Math.random() * .2);        // grass word: its own sound
+          else if (kind === 'cut') sfx('snip');
+          else if (kind === 'hover') sfx(bubble ? 'bloop' : 'pop', .8 + (l.i % 8) * .06);
           else if (kind === 'pop') sfx('bubblePop', .9 + Math.random() * .3);
           else if (kind === 'click') sfx('boing', .85 + Math.random() * .3);
           else if (kind === 'land' && lands++ % 2 === 0) sfx('land', .9 + (l.i % 6) * .05);
@@ -308,6 +355,7 @@
      hop section to section; click it to open the big wheel: every section sits around the rim — drag around the
      ring to scrub through the page, or tap a stop to jump straight there. */
   on('#about', () => {
+    if ($('.cat-hub')) return;   // homepage sections live behind category buttons now, so no dial
     const STOPS = [['top', '🏰', 'Welcome'], ['about', '🐾', 'About us'], ['instagram', '📸', 'Instagram'], ['trophy', '🏆', 'Voted best 6×'],
       ['services', '🛎️', 'Services'], ['why', '💜', 'Why us'], ['pricing', '🏷️', 'Pricing'], ['day', '☀️', 'A day here'],
       ['plan', '🧮', 'Plan a stay'], ['new-clients', '📋', 'New clients'], ['staff', '👋', 'Meet the pack'], ['reviews', '⭐', 'Reviews'],
@@ -425,16 +473,40 @@
 
   /* ================= 3D trophy stage ================= */
   on('#trophy3d', host => {
-    const stage = $('#trophyStage');
+    const stage = $('#trophyStage'), curtain = $('.curtain', stage);
     const lightYears = () => $$('.years span', stage).forEach((y, i) => setTimeout(() => { y.style.transitionDelay = '0s'; y.style.opacity = 1; y.style.transform = 'none'; sfx('pop', 1 + i * .08); }, 250 + i * 160));
+    const confetti = () => {   // one burst from behind the curtain line
+      const box = document.createElement('div'); box.className = 'confetti'; box.setAttribute('aria-hidden', 'true');
+      const C = ['#ec6fa9', '#ffd77a', '#7cc4f5', '#ffffff', '#f5c542', '#ff9ccc'];
+      for (let i = 0; i < (reduce ? 0 : 90); i++) {
+        const c = document.createElement('i');
+        c.style.cssText = `--x:${(Math.random() - .5) * 120}vw;--y:${-40 - Math.random() * 60}vh;--fall:${50 + Math.random() * 40}vh;--r:${Math.random() * 1080 - 540}deg;--d:${1.8 + Math.random() * 1.4}s;--dl:${Math.random() * .25}s;background:${C[i % C.length]};left:${30 + Math.random() * 40}%`;
+        box.append(c);
+      }
+      stage.append(box); setTimeout(() => box.remove(), 4000);
+    };
     const ctl = window.HPPTrophy ? window.HPPTrophy(host, {
+      autoStart: !curtain,
       onEvent(kind, to) {
         if (kind === 'on') { sfx('click', .6); setTimeout(() => sfx('whoosh'), 120); }
         if (kind === 'lit') { stage.classList.add('lit'); lightYears(); }
         if (kind === 'morph') { sfx('sparkle'); sfx('whoosh'); }
       }
     }) : null;
-    if (!ctl) { on($('.fallback', host), f => f.hidden = false); new IntersectionObserver(es => { if (es[0].isIntersecting) { stage.classList.add('lit'); lightYears(); } }, { threshold: .4 }).observe(stage); }
+    if (!ctl) on($('.fallback', host), f => f.hidden = false);
+    // the show plays once, the first time the stage is properly on screen: drumroll + spotlight sweep across the
+    // closed curtains, then they gather open, the trophy rises into the light, confetti, fanfare
+    let shown = false;
+    const show = () => {
+      if (shown) return; shown = true;
+      if (!curtain) { if (!ctl) { stage.classList.add('lit'); lightYears(); } return; }
+      const T = reduce ? { open: 0, start: 0, party: 300 } : { open: 1900, start: 2300, party: 3300 };
+      stage.classList.add('showtime'); if (!reduce) sfx('drumroll', 1.8);
+      setTimeout(() => { stage.classList.add('opened'); sfx('whoosh'); }, T.open);
+      setTimeout(() => { if (ctl) ctl.start(); else { stage.classList.add('lit'); lightYears(); } }, T.start);
+      setTimeout(() => { confetti(); sfx('tada'); stage.classList.add('revealed'); }, T.party);
+    };
+    new IntersectionObserver((es, io) => { if (es[0].intersectionRatio > .45) { io.disconnect(); show(); } }, { threshold: [.45, .7] }).observe(stage);
   });
 
   /* ================= scroll-linked motion ================= */
@@ -607,15 +679,36 @@
     }));
   });
 
+  /* ================= floating hero reviews: every few seconds one card fades to the next review ================= */
+  on('#rvPool', poolEl => {
+    const pool = JSON.parse(poolEl.textContent), cards = $$('.rvf'); if (!cards.length || pool.length <= cards.length) return;
+    let next = cards.length, k = 0;
+    const shown = new Set(cards.map(c => $('q', c).textContent));
+    setInterval(() => {
+      if (document.hidden) return;
+      const card = cards[k++ % cards.length];
+      let r; do { r = pool[next++ % pool.length]; } while (shown.has(r.t));
+      card.classList.add('swap');
+      setTimeout(() => {
+        shown.delete($('q', card).textContent); shown.add(r.t);
+        $('q', card).textContent = r.t; $('small', card).textContent = `— ${r.n} · ${r.f}`;
+        card.classList.remove('swap');
+      }, 800);
+    }, 9000);   // a new review every 9 s
+  });
+
   /* ================= staff ================= */
   on('#staffGrid', grid => {
-    const STAFF = [['Linda', 1], ['Amber', 1], ['Lucy', 1], ['Andrea'], ['Angela'], ['Askyla'], ['Ben'], ['Caity'], ['Calvin'], ['Charlie'], ['David'], ['Ella'], ['Flor'], ['Hailey'],
-      ['Jayde'], ['Kate'], ['Katie'], ['Keara'], ['Leah'], ['Lindsay'], ['Luca'], ['Makenzie'], ['Marcus'], ['Mia'], ['Roxane'], ['Scott'], ['Sophia'], ['Will']];
+    // [name, role]: 'mgr' = Manager, 'lead' = Shift Leader, none = Pet Care Specialist (leadership listed first)
+    const STAFF = [['Linda', 'mgr'], ['Amber', 'mgr'], ['Lucy', 'mgr'], ['Charlie', 'lead'], ['Kate', 'lead'], ['Leah', 'lead'], ['Makenzie', 'lead'],
+      ['Andrea'], ['Angela'], ['Askyla'], ['Ben'], ['Caity'], ['Calvin'], ['David'], ['Ella'], ['Flor'], ['Hailey'],
+      ['Jayde'], ['Katie'], ['Keara'], ['Lindsay'], ['Luca'], ['Marcus'], ['Mia'], ['Roxane'], ['Scott'], ['Sophia'], ['Will']];
+    const ROLE = { mgr: 'Manager', lead: 'Shift Leader' };
     const limit = +grid.dataset.limit || STAFF.length;
-    grid.innerHTML = STAFF.slice(0, limit).map(([n, mgr], i) => `
-      <div class="member${mgr ? ' mgr' : ''}" data-reveal="pop" style="--i:${i % 6};--rot:${i % 2 ? 3 : -3}deg" tabindex="0" role="button" aria-label="Send ${n} some love">
+    grid.innerHTML = STAFF.slice(0, limit).map(([n, role], i) => `
+      <div class="member${role ? ' ' + role : ''}" data-reveal="pop" style="--i:${i % 6};--rot:${i % 2 ? 3 : -3}deg" tabindex="0" role="button" aria-label="Send ${n} some love">
         <div class="ph"><span class="fallback">${n[0]}</span><img src="assets/img/staff-${n.toLowerCase()}.webp" alt="${n}" loading="lazy" onerror="this.remove()"></div>
-        <h4>${n}</h4><span>${mgr ? 'Manager' : 'Pet Care Specialist'}</span><span class="heart">💜</span>
+        <h4>${n}</h4><span>${ROLE[role] || 'Pet Care Specialist'}</span><span class="heart">💜</span>
       </div>`).join('');
     HPP.ready.then(() => $$('[data-reveal]', grid).forEach(observe));
     $$('.member', grid).forEach((m, i) => {
@@ -683,7 +776,7 @@
     let W, Hh, dpr;
     const size = () => { dpr = Math.min(2, devicePixelRatio || 1); W = cv.width = innerWidth * dpr; Hh = cv.height = innerHeight * dpr; };
     size(); addEventListener('resize', size);
-    const PAL = ['#c23a8c', '#1fb2c9', '#ff8fc6', '#f2b233', '#521034'];
+    const PAL = ['#2f6fd6', '#ff7fb8', '#ff8fc6', '#f2b233', '#123a6b'];
     const drawPaw = (x, y, ang, s, alpha, color) => {
       ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.scale(s, s);
       ctx.globalAlpha = alpha; ctx.fillStyle = color;

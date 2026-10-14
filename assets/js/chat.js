@@ -1,9 +1,9 @@
-/* Duke — the pup concierge.
+/* Lacy — the pup concierge.
    Answers FAQs from the Palace's published policies, runs guided booking + pre-screen scheduling,
    and hands off to MoeGo booking / email / phone. No server needed.
 
    Optional: set window.HPP_AI_ENDPOINT = 'https://your-endpoint' before this script loads to send
-   questions Duke can't answer to an AI backend. It receives POST {question, history} and should
+   questions Lacy can't answer to an AI backend. It receives POST {question, history} and should
    return JSON {answer: "<html or text>"}. Keep API keys on that server, never in this file. */
 (() => {
   const HPP = window.HPP, $ = s => document.querySelector(s);
@@ -253,7 +253,7 @@
   /* ---------------- knowledge base ---------------- */
   const hoursHtml = () => { const s = HPP.status(); return `<b>${s.open ? '🟢' : '🔴'} ${s.text}</b> (both locations)<ul><li>Mon–Fri: 6:00 AM – 6:30 PM</li><li>Saturday: 8:00 AM – 6:30 PM</li><li>Sunday & holidays: 8–10:30 AM and 4–6:30 PM</li></ul><div class="mini">Boarding pickup/drop-off is available 365 days a year.</div>`; };
   const KB = [
-    { k: [/^(hi|hey|hello|howdy|yo|sup)\b/, /good (morning|afternoon|evening)/], a: () => 'Woof woof! 🐶 I’m Duke. Ask me anything about the Palace, or let me help you book.', c: 'home' },
+    { k: [/^(hi|hey|hello|howdy|yo|sup)\b/, /good (morning|afternoon|evening)/], a: () => 'Woof woof! 🐶 I’m Lacy. Ask me anything about the Palace, or let me help you book.', c: 'home' },
     { k: [/^(thanks|thank you|thx|ty)\b|thanks!?$|awesome|perfect/], a: 'Anytime! *happy tail wag* 🐾 Anything else?', c: 'home' },
     { k: [/where|address|located|location|directions|map|near me/], a: () => `We have two palaces:<ul><li><b>Mesa</b> — 1918 E McKellips Rd, Mesa 85203</li><li><b>Chandler</b> — 1080 E Pecos Rd, Suite 16, Chandler 85225</li></ul>Same services, same rates — pick the shorter drive! <a href="mesa.html">Mesa</a> · <a href="chandler.html">Chandler</a>` },
     { k: [/phone|call|contact|email|reach|number/], a: () => `📞 <a href="tel:${HPP.tel}">${HPP.phone}</a> (both locations)<br>✉️ Mesa: <a href="mailto:${L.mesa.mail}">${L.mesa.mail}</a><br>✉️ Chandler: <a href="mailto:${L.chandler.mail}">${L.chandler.mail}</a>` },
@@ -352,7 +352,7 @@
   /* ---------------- open / close ---------------- */
   const greet = async () => {
     started = true;
-    await bot('Woof! 🐶 I’m <b>Duke</b>, the Palace concierge. I can answer questions, estimate prices, and help you book a stay or schedule a first-visit pre-screen.', 500);
+    await bot('Woof! 🐶 I’m <b>Lacy</b>, the Palace concierge. I can answer questions, estimate prices, and help you book a stay or schedule a first-visit pre-screen.', 500);
     chips(FOLLOW.home);
   };
   const open = async intent => {
@@ -368,7 +368,7 @@
     setTimeout(() => input.focus({ preventScroll: true }), 300);
   };
   const close = () => { sfx('close'); chat.classList.remove('open'); fab.classList.remove('open'); fab.setAttribute('aria-expanded', 'false'); fab.focus(); };
-  fab.addEventListener('click', () => chat.classList.contains('open') ? close() : open());
+  fab.addEventListener('click', () => { sfx('bark', 1.15 + Math.random() * .1); chat.classList.contains('open') ? close() : open(); });   // Lacy says hi
   $('#chatClose').addEventListener('click', close);
   $('#chatReset').addEventListener('click', () => { body.innerHTML = ''; history.length = 0; flow = null; busy = false; greet(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && chat.classList.contains('open')) close(); });
