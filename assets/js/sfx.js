@@ -96,6 +96,20 @@
     type: () => tone({ type: 'triangle', f0: 1500 + Math.random() * 400, dur: .02, vol: .025 }),
     tick: () => tone({ type: 'square', f0: 2400, dur: .012, vol: .015, q: 4000 }),
     bloop: (p = 1) => tone({ f0: 300 * p, f1: 620 * p, dur: .12, vol: .07, a: .02 }),                       // soft bubble wobble
+    drumroll: (dur = 1.8) => {   // a snare roll that swells, then a crash
+      const n = Math.round(dur / .055);
+      for (let i = 0; i < n; i++) noise({ dur: .05, vol: .03 + .07 * i / n, f0: 900, f1: 2600, delay: i * .055 });
+      noise({ dur: .9, vol: .12, f0: 5000, f1: 9000, delay: n * .055 });
+    },
+    tada: () => {   // a little brass-ish fanfare: three quick notes and a held chord
+      [523, 659, 784].forEach((f, i) => tone({ type: 'sawtooth', f0: f, dur: .12, vol: .05, q: 2400, delay: i * .1 }));
+      [523, 659, 784, 1046].forEach(f => tone({ type: 'sawtooth', f0: f, dur: .7, vol: .04, q: 2600, delay: .32 }));
+    },
+    rustle: (p = 1) => { for (let i = 0; i < 4; i++) noise({ dur: .07 + Math.random() * .05, vol: .045, f0: (2600 + Math.random() * 900) * p, f1: 5200 * p, delay: i * .045 + Math.random() * .02 }); },   // brushing through grass
+    snip: () => {   // garden shears: two crisp "chk-chk" snips, then the clippings scatter
+      [0, .11].forEach(d => { noise({ dur: .05, vol: .13, f0: 4200, f1: 7200, delay: d }); tone({ type: 'square', f0: 2600, f1: 1700, dur: .025, vol: .03, q: 5000, delay: d }); });
+      noise({ dur: .4, vol: .05, f0: 2200, f1: 5200, delay: .18 });
+    },
     bubblePop: (p = 1) => {   // the real recorded pop (a random one, if the clip has several), with a hair of pitch variety
       const c = ctx(); if (!c) return;
       if (popBuf === false) return lib.synthPop(p);

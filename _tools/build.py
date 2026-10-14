@@ -20,13 +20,36 @@ layout = (SRC / 'layout.html').read_text(encoding='utf-8')
 bulldog = (SRC / 'bulldog.svg').read_text(encoding='utf-8').strip()   # loader mascot
 # cache-busting version: changes whenever any CSS/JS/font file changes
 VERSION = hashlib.md5(b''.join(p.read_bytes() for p in sorted((ROOT / 'assets').rglob('*')) if p.suffix in ('.css', '.js'))).hexdigest()[:8]
-pup = (SRC / 'pup.svg').read_text(encoding='utf-8').strip()           # chat button icon
+pup = (SRC / 'pup.svg').read_text(encoding='utf-8').strip()           # chat button icon (line-art, unused)
+lacy = (SRC / 'lacy.svg').read_text(encoding='utf-8').strip()         # Lacy the Pomeranian: chat button + chat header (inline, so she can blink)
+# ...and as a cached image file for the loader and page wipe (no need for two more inline copies on every page)
+(ROOT / 'assets/img/lacy.svg').write_text(lacy.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ', 1), encoding='utf-8')
+AWARD = '''<div class="award-card" data-reveal>
+  <svg class="award-medal" viewBox="0 0 120 150" aria-hidden="true">
+    <defs><linearGradient id="medalGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe69a"/><stop offset=".5" stop-color="#f5c542"/><stop offset="1" stop-color="#d4921c"/></linearGradient></defs>
+    <path d="M38 78 L22 146 L42 134 L52 150 L62 86Z" fill="#ec6fa9"/><path d="M82 78 L98 146 L78 134 L68 150 L58 86Z" fill="#1f5c9e"/>
+    <g transform="translate(60 60)">
+      <path fill="url(#medalGold)" d="''' + ' '.join(f"{'M' if i == 0 else 'L'}{(52 if i % 2 == 0 else 45) * __import__('math').cos(i * __import__('math').pi / 16):.1f} {(52 if i % 2 == 0 else 45) * __import__('math').sin(i * __import__('math').pi / 16):.1f}" for i in range(32)) + '''Z"/>
+      <circle r="38" fill="#fff8e1" stroke="#d4921c" stroke-width="3"/>
+      <text y="5" text-anchor="middle" font-family="Fredoka, system-ui, sans-serif" font-weight="700" font-size="31" fill="#123a6b">6×</text>
+      <!-- curved along the bottom of the medal's face so it fits inside the rim -->
+      <path id="medalArc" d="M-28.5 0 A28.5 28.5 0 0 0 28.5 0" fill="none"/>
+      <text font-family="Jost, system-ui, sans-serif" font-weight="700" font-size="8" letter-spacing="1.1" fill="#c2457f"><textPath href="#medalArc" startOffset="50%" text-anchor="middle">BEST IN MESA</textPath></text>
+    </g>
+  </svg>
+  <div class="award-txt">
+    <span class="award-ey">Voted six years running</span>
+    <h3>Best Pet Boarding Services in Mesa</h3>
+    <div class="trophies" aria-label="Six wins"><i>🏆</i><i>🏆</i><i>🏆</i><i>🏆</i><i>🏆</i><i>🏆</i></div>
+  </div>
+  <div class="award-logo"><img src="assets/img/award.webp" alt="Award-winning dog services" loading="lazy"></div>
+</div>'''
 
 BOOK_BUTTONS = ('<a class="btn magnetic" href="book.html?loc=mesa">Book Mesa <span class="arrow">→</span></a>'
                 '<a class="btn teal magnetic" href="book.html?loc=chandler">Book Chandler <span class="arrow">→</span></a>'
                 '<a class="btn ghost magnetic" href="tel:+14802071852">📞 480-207-1852</a>')
 BOOK_CTA = f'''<section style="padding-top:20px"><div class="wrap"><div class="cta-band" data-reveal="scale">
-  <div><h2 data-color="white" data-fur="pink">Ready to <span class="s">book?</span></h2><p>Select your nearest location to reserve your spot — or ask Duke, our pup concierge.</p></div>
+  <div><h2 data-color="white" data-fur="pink">Ready to <span class="s">book?</span></h2><p>Select your nearest location to reserve your spot — or ask Lacy, our pup concierge.</p></div>
   <div class="ctas"><a class="btn light magnetic" href="book.html?loc=mesa">Book Mesa <span class="arrow">→</span></a><a class="btn light magnetic" href="book.html?loc=chandler">Book Chandler <span class="arrow">→</span></a><a class="btn ghost magnetic" style="--c:#fff" href="tel:+14802071852">📞 Call</a></div>
 </div></div></section>'''
 
@@ -44,6 +67,14 @@ def reviews_strip():
     rows = [REVIEWS[:half], REVIEWS[half:]]
     out = ''.join(f'<div class="rv-row{" rev" if k else ""}"><div class="rv-track">{"".join(review_card(r) for r in row * 2)}</div></div>' for k, row in enumerate(rows))
     return f'<div class="rv-marquee" aria-label="Customer reviews">{out}</div>'
+def reviews_float():
+    """One 5-star review card that floats under the homepage hero photo; core.js cycles it through every review."""
+    def short(t, n=115):
+        return t if len(t) <= n else t[:t.rfind(' ', 0, n)].rstrip(' ,.…') + '…'
+    pool = [{'t': short(r['text']), 'n': r['name'], 'f': r['from']} for r in REVIEWS]
+    card = lambda k, r: (f'<div class="float rvf rvf{k}" data-depth="{(14, -18)[k - 1]}"><div class="bob"><div class="rvf-in">'
+                         f'<span class="stars" aria-label="5 out of 5 stars">★★★★★</span><q>{html.escape(r["t"])}</q><small>— {html.escape(r["n"])} · {html.escape(r["f"])}</small></div></div></div>')
+    return card(1, pool[0]) + '<script type="application/json" id="rvPool">' + json.dumps(pool, ensure_ascii=False).replace('</', r'<\/') + '</script>'
 def reviews_grid():
     return '<div class="rv-grid">' + ''.join(review_card(r, i) for i, r in enumerate(REVIEWS)).replace('<figure class="rv"', '<figure class="rv" data-reveal') + '</div>'
 
@@ -81,7 +112,7 @@ def build(page):
             k, _, v = line.partition(':'); meta[k.strip()] = v.strip()
         text = text[m.end():]
     text = re.sub(r'\[\[hero (.*?)\]\]', lambda mm: hero(attrs(mm.group(1))), text, flags=re.S)
-    text = text.replace('[[book_cta]]', BOOK_CTA).replace('[[book_buttons]]', BOOK_BUTTONS).replace('[[reviews_strip]]', reviews_strip()).replace('[[reviews_grid]]', reviews_grid())
+    text = text.replace('[[book_cta]]', BOOK_CTA).replace('[[book_buttons]]', BOOK_BUTTONS).replace('[[reviews_strip]]', reviews_strip()).replace('[[reviews_grid]]', reviews_grid()).replace('[[reviews_float]]', reviews_float()).replace('[[award]]', AWARD)
     name = page.stem
     title = meta.get('title', 'Happy Pets Palace')
     out = layout
@@ -92,7 +123,7 @@ def build(page):
         out = out.replace('{{cur_%s}}' % key, ' aria-current="page"' if nav == key else '')
     out = (out.replace('{{doc_title}}', 'Happy Pets Palace' if name == 'index' else f'{title} | Happy Pets Palace')
               .replace('{{description}}', html.escape(meta.get('description', ''), quote=True))
-              .replace('{{page}}', name).replace('{{bulldog}}', bulldog).replace('{{pup}}', pup).replace('{{v}}', VERSION).replace('{{body}}', text.strip()))
+              .replace('{{page}}', name).replace('{{bulldog}}', bulldog).replace('{{pup}}', pup).replace('{{lacy}}', lacy).replace('{{v}}', VERSION).replace('{{body}}', text.strip()))
     (ROOT / f'{name}.html').write_text(out, encoding='utf-8')
     return name
 

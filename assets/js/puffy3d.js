@@ -13,7 +13,7 @@
   const SIZE = 100;                       // world units per em
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MOBILE = matchMedia('(max-width: 700px), (pointer: coarse)').matches;   // lighter geometry + resolution on phones
-  H.colors = { plum: '#c23a8c', teal: '#1fb2c9', pink: '#ff8fc6', white: '#fff4fb', butter: '#ffc23d', grape: '#8a5cff', brown: '#b0703c' };
+  H.colors = { plum: '#2f6fd6', teal: '#ff7fb8', pink: '#ff8fc6', white: '#fff4fb', butter: '#ffc23d', grape: '#8a5cff', brown: '#b0703c' };
 
   /* ---------- shared building blocks ---------- */
   const fonts = {};
@@ -80,8 +80,8 @@
     key.position.set(-200, 340, 640); key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024); key.shadow.radius = 14; key.shadow.blurSamples = 20; key.shadow.bias = -.002;
     scene.add(key, key.target);
-    const rim = new T.DirectionalLight('#ffd9ee', Lt.rim); rim.position.set(400, -150, 300); scene.add(rim);
-    scene.add(new T.HemisphereLight('#ffffff', '#f3dcff', Lt.hemi));
+    const rim = new T.DirectionalLight('#d9ecff', Lt.rim); rim.position.set(400, -150, 300); scene.add(rim);
+    scene.add(new T.HemisphereLight('#ffffff', '#dce8ff', Lt.hemi));
     const floor = new T.Mesh(new T.PlaneGeometry(1, 1), new T.ShadowMaterial({ opacity: Lt.shadow }));
     floor.position.z = -SIZE * .26; floor.receiveShadow = true; scene.add(floor);
     return { scene, key, floor };
@@ -145,6 +145,7 @@
     const { scene, key, floor } = stage(renderer);
     const cam = new T.OrthographicCamera(-1, 1, 1, -1, -2000, 2000); cam.position.z = 1000;
     const group = new T.Group(); scene.add(group);
+    const still = new T.Group(); scene.add(still);   // grass words: they stay put (no float, sway, tilt or pop) — only their blades move
     const meta = font(fontName).data, asc = meta.ascender * SIZE / 1000, desc = meta.descender * SIZE / 1000;
     let letters = [], W = 0, Hh = 0, px = 100, lineH = SIZE * 1.24;   // roomy lines so fat letters don't collide
     const ray = new T.Raycaster(), ptr = new T.Vector2(-9, -9);
@@ -409,7 +410,29 @@
     return geo;
   }
 
-  H.bubbles = (el, words, { onHit } = {}) => {
+  /* ---------- grass word ----------
+     A word drawn blade-by-blade by fur.js (hue "grass") and shown on a flat quad, so it floats, sways and pops
+     with the bubble words around it. Same userData contract as inflatedWord. */
+  const grassGeoCache = new Map();
+  function grassWord(text) {
+    if (grassGeoCache.has(text)) return grassGeoCache.get(text);
+    const r = H.fur(text, { px: MOBILE ? 110 : 160, hue: 'grass' }), e = r.em, cv = r.canvas;
+    const tex = new T.CanvasTexture(cv);
+    tex.generateMipmaps = true; tex.minFilter = T.LinearMipmapLinearFilter; tex.magFilter = T.LinearFilter;
+    const k = SIZE * .91;   // fur.js draws letters 10% large; bring them back to the bubble words' size
+    const ww = e.w * k, wh = e.h * k, geo = new T.PlaneGeometry(ww, wh);
+    const A = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, W = cv.width, Hh = cv.height;
+    geo.userData = { cx: ww / 2 - e.padL * k, cy: wh / 2 - e.base * k, w: ww - (e.padL + e.padR) * k, tex, grass: true,
+      fur: r, ptr: { x: -1e4, y: -1e4, power: 0 },   // the pointer, in canvas pixels, for the live blades
+      solid: (u, v) => { const x = Math.min(W - 1, Math.max(0, u * W | 0)), y = Math.min(Hh - 1, Math.max(0, (1 - v) * Hh | 0)); return A[(y * W + x) * 4 + 3] > 60; } };
+    grassGeoCache.set(text, geo);
+    return geo;
+  }
+  const grassMat = g => new T.MeshBasicMaterial({ map: g.userData.tex, transparent: true, depthWrite: false, opacity: 0 });   // hidden until it sprouts
+  const STUB = .1;   // blade height left after a mow
+  const CLIP = ['#2f7d1f', '#3a8f22', '#4fb52f', '#6dcf45', '#8fe060'].map(c => new T.Color(c));
+
+  H.bubbles =(el, words, { onHit } = {}) => {
     const canvas = document.createElement('canvas');
     canvas.className = 'live3d'; canvas.setAttribute('aria-hidden', 'true');
     el.append(canvas);
@@ -418,12 +441,14 @@
     const scene = new T.Scene();
     const cam = new T.OrthographicCamera(-1, 1, 1, -1, -2000, 2000); cam.position.z = 1000;
     const group = new T.Group(); scene.add(group);
+    const still = new T.Group(); scene.add(still);   // grass words: they stay put (no float, sway, tilt or pop) — only their blades move
     let items = [], W = 0, Hh = 0, px = 100, lineH = SIZE * 1.18, view = { l: 0, r: 1, t: 1, b: 0 };
     const allMats = [];
     const ray = new T.Raycaster(), ptr = new T.Vector2(-9, -9);
     let hover = null, tx = 0, ty = 0, t0 = performance.now();
     const sphere = new T.SphereGeometry(1, MOBILE ? 18 : 28, MOBILE ? 14 : 20);
-    const floaters = [], pops = [];
+    const floaters = [], pops = [], clips = [];
+    const clipGeo = new T.PlaneGeometry(1.5, 7);
     const floaterMat = () => { const m = bubbleMat('#bfe6ee'); m.uniforms.uWob.value = 0; allMats.push(m); return m; };
     let spawnL = 0, spawnR = 1;   // floaters start under the title, then drift up through the whole hero
     const edgeFade = (x, y, r) => Math.min(1, Math.max(0, Math.min(x - r - view.l, view.r - x - r, view.t - y - r, y + r - view.b) / (SIZE * .7)));
@@ -441,20 +466,21 @@
       const maxW = W / px * SIZE;
       const lines = [[]]; let lx = 0;
       words.forEach(w => {
-        const g = inflatedWord(w.text), wW = g.userData.w;
+        const g = w.grass && H.fur ? grassWord(w.text) : inflatedWord(w.text), wW = g.userData.w;
         if (lx > 0 && lx + wW > maxW) { lines.push([]); lx = 0; }
         lines[lines.length - 1].push({ ...w, g, x: lx }); lx += wW + space;
       });
-      group.clear(); const old = items; items = [];
+      group.clear(); still.clear(); const old = items; items = [];
       lines.forEach((ln, li) => ln.forEach(w => {
-        const n = items.length, mat = bubbleMat(w.color, w.g.userData); allMats.push(mat);
+        const n = items.length, grass = !!w.g.userData.grass, mat = grass ? grassMat(w.g) : bubbleMat(w.color, w.g.userData);
+        if (!grass) allMats.push(mat);
         const m = new T.Mesh(w.g, mat);
         const home = new T.Vector3(w.x + w.g.userData.cx, -li * lineH + w.g.userData.cy, 0);
         const s = old[n] ? old[n].s : { ox: (w.x < 1 ? Math.random() * .5 : Math.random() - .5) * 120,   // edge words never drift past the canvas edge
            oy: -300 - Math.random() * 200, vx: 0, vy: 0, sc: .25, vsc: 0,
-          rz: (Math.random() - .5) * .5, vrz: 0, delay: n * .12, wob: 2.2, popT: -1 };
-        m.position.copy(home); group.add(m);
-        items.push({ m, home, s, i: n });
+          rz: (Math.random() - .5) * .5, vrz: 0, delay: grass ? words.length * .12 + .55 : n * .12, wob: 2.2, popT: -1, grown: false, cutT: -1 };   // grass sprouts last
+        m.position.copy(home); (grass ? still : group).add(m);
+        items.push({ m, home, s, i: n, grass });
       }));
       Hh = Math.ceil(lines.length * lineH / SIZE * px + px * .45);
       el.style.height = Hh + 'px';
@@ -473,8 +499,20 @@
     const toLocal = e => { const r = canvas.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); tx = ptr.x; ty = ptr.y; };
     const pick = () => {   // only count hits on the bubble itself, not the transparent margin of its quad
       ray.setFromCamera(ptr, cam);
-      const hit = ray.intersectObjects(group.children, false).find(h => h.uv && h.object.geometry.userData.solid(h.uv.x, h.uv.y));
+      const hit = ray.intersectObjects(group.children.concat(still.children), false).find(h => h.uv && h.object.geometry.userData.solid(h.uv.x, h.uv.y));
+      const gd = hit && hit.object.geometry.userData;
+      if (gd && gd.grass) { const c = gd.fur.canvas; Object.assign(gd.ptr, { x: hit.uv.x * c.width, y: (1 - hit.uv.y) * c.height, power: 1 }); }
       return hit && items.find(l => l.m === hit.object);
+    };
+    const mow = l => {   // grass clippings fly up off the word and tumble away
+      const g = l.m.geometry.userData, left = l.home.x - g.cx, baseY = l.home.y - g.cy;
+      for (let i = 0; i < (MOBILE ? 26 : 44); i++) {
+        const m = new T.Mesh(clipGeo, new T.MeshBasicMaterial({ color: CLIP[i % CLIP.length], transparent: true, depthWrite: false }));
+        m.position.set(left + Math.random() * g.w, baseY + SIZE * (.15 + Math.random() * .6), 40);
+        m.rotation.z = Math.random() * 6.28; m.scale.setScalar(.8 + Math.random() * .8);
+        m.userData = { vx: (Math.random() - .5) * 170, vy: 90 + Math.random() * 190, vr: (Math.random() - .5) * 16, life: 1 };
+        scene.add(m); clips.push(m);
+      }
     };
     const burst = (pos, n) => {
       for (let i = 0; i < n; i++) {
@@ -485,12 +523,18 @@
     };
     el.addEventListener('pointermove', e => {
       toLocal(e); const l = pick();
-      if (l && l !== hover && l.s.popT < 0) { l.s.wob = 2.4; l.s.vsc += 1.2; onHit && onHit('hover', l); }   // no bloop over a popping word
+      if (l && l !== hover && l.grass) onHit && onHit('rustle', l);                                          // grass: blades part, no wobble
+      else if (l && l !== hover && l.s.popT < 0) { l.s.wob = 2.4; l.s.vsc += 1.2; onHit && onHit('hover', l); }   // no bloop over a popping word
       hover = l || null; el.classList.toggle('hot', !!l);
     });
     el.addEventListener('pointerleave', () => { hover = null; tx = ty = 0; ptr.set(-9, -9); });
     el.addEventListener('pointerdown', e => {
-      toLocal(e); const l = pick(); if (!l || l.s.popT >= 0) return;
+      toLocal(e); const l = pick();
+      if (l && l.grass) {   // grass doesn't pop: it gets mowed down to stubble, then grows back
+        if (l.s.grown && l.s.cutT < 0) { l.s.cutT = (performance.now() - t0) / 1000; mow(l); onHit && onHit('cut', l); }
+        return;
+      }
+      if (!l || l.s.popT >= 0) return;
       l.s.popT = 0; burst(l.m.getWorldPosition(new T.Vector3()), 14);
       onHit && onHit('pop', l);
     });
@@ -505,6 +549,23 @@
       group.rotation.x += ((reduce ? 0 : -ty * .12) - group.rotation.x) * .05;
       items.forEach(l => {
         const s = l.s;
+        if (l.grass) {   // planted: fixed in place, just fades in on cue and lets its blades sway under the pointer
+          const gd = l.m.geometry.userData;
+          l.m.position.copy(l.home); l.m.rotation.set(0, 0, 0); l.m.scale.set(1, 1, 1);
+          const ease = x => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+          l.m.material.opacity = t < s.delay ? 0 : 1;
+          let grow = 1, wave = 0, fresh = 0;
+          if (s.cutT >= 0) {   // stubble with pale cut ends, a beat, then it grows back
+            const k = (t - s.cutT - .8) / 2.6; grow = STUB + (1 - STUB) * ease(k); fresh = 1 - Math.min(1, Math.max(0, k)); if (k >= 1) s.cutT = -1;
+          }
+          else if (!s.grown) { const k = (t - s.delay) / 1.6; grow = ease(k); wave = .6; if (k >= 1) s.grown = true; }        // sprouts in, left to right
+          if (t >= s.delay && (grow < 1 || fresh > 0 || gd.ptr.power > .015 || s.redraw)) {
+            if (gd.ptr.power > .015) gd.ptr.power *= .94;
+            gd.fur.draw(t, gd.ptr.power > .015 ? gd.ptr : null, grow, wave, fresh); gd.tex.needsUpdate = true;
+            s.redraw = grow < 1 || fresh > 0;   // one last clean, full-height frame once it's done growing
+          }
+          return;
+        }
         for (let left = elapsed; left > 1e-6; left -= 1 / 120) {
           const dt = Math.min(left, 1 / 120);
           if (t < s.delay) continue;
@@ -521,8 +582,8 @@
         l.m.rotation.z = s.rz + sway;
         const br = reduce ? 0 : Math.sin(ph * 1.4) * .012;              // gentle breathing
         l.m.scale.set(Math.max(.001, s.sc * (1 + br)), Math.max(.001, s.sc * (1 - br)), Math.max(.001, s.sc));
-        l.m.material.uniforms.uWob.value = reduce ? 0 : s.wob;
-        l.m.material.uniforms.uFade.value = Math.min(1, Math.max(0, s.sc), Math.max(0, 1 - Math.abs(s.oy) / 260));   // fade in while rising, so no word is seen half-cut by the canvas edge
+        const fade = Math.min(1, Math.max(0, s.sc), Math.max(0, 1 - Math.abs(s.oy) / 260));   // fade in while rising, so no word is seen half-cut by the canvas edge
+        l.m.material.uniforms.uWob.value = reduce ? 0 : s.wob; l.m.material.uniforms.uFade.value = fade;
       });
       floaters.forEach(f => {
         const d = f.userData; f.position.y += d.vy * elapsed; f.position.x += Math.sin(t * .9 + d.ph) * 8 * elapsed;
@@ -530,6 +591,12 @@
         if (f.position.y - f.scale.x > view.t) { f.position.y = view.b - d.s; f.position.x = spawnL + Math.random() * (spawnR - spawnL); }
         f.material.uniforms.uFade.value = edgeFade(f.position.x, f.position.y, f.scale.x);   // soft fade at every edge, never a hard cut
       });
+      for (let i = clips.length - 1; i >= 0; i--) {   // falling grass clippings
+        const m = clips[i], d = m.userData; d.life -= elapsed * .75; d.vy -= 430 * elapsed; d.vx *= 1 - elapsed * .8;
+        m.position.x += d.vx * elapsed; m.position.y += d.vy * elapsed; m.rotation.z += d.vr * elapsed;
+        m.material.opacity = Math.min(1, d.life * 2.5) * edgeFade(m.position.x, m.position.y, 4);
+        if (d.life <= 0) { scene.remove(m); m.material.dispose(); clips.splice(i, 1); }
+      }
       for (let i = pops.length - 1; i >= 0; i--) {
         const p = pops[i], d = p.userData; d.life -= elapsed * 1.3; d.vy -= 40 * elapsed;
         p.position.x += d.vx * elapsed; p.position.y += d.vy * elapsed; p.material.uniforms.uFade.value = Math.max(0, d.life) * edgeFade(p.position.x, p.position.y, p.scale.x);

@@ -1,9 +1,10 @@
-/* 3D trophy stage — a gold trophy under a spotlight that bursts into sparkles and re-forms as a giant "6"
-   (Voted Best Pet Boarding in Mesa, six years running). Starts when scrolled into view; tap to replay.
+/* 3D trophy stage — a gold trophy on a velvet podium under a spotlight that bursts into sparkles and re-forms as a giant "6"
+   (Voted Best Pet Boarding in Mesa, six years running). With autoStart:false the page starts it (after its curtain
+   reveal) by calling .start(); otherwise it starts when scrolled into view. Tap to replay the morph.
    Uses three r147 + MeshSurfaceSampler + the Fredoka typeface already loaded for the titles. */
 (() => {
   const T = window.THREE;
-  window.HPPTrophy = (host, { onEvent = () => {} } = {}) => {
+  window.HPPTrophy = (host, { onEvent = () => {}, autoStart = true } = {}) => {
     if (!T || !T.MeshSurfaceSampler || !window.HPP_FONTS) return null;
     try { const c = document.createElement('canvas'); if (!(c.getContext('webgl2') || c.getContext('webgl'))) return null; } catch { return null; }
     if (T.ColorManagement) T.ColorManagement.legacyMode = false;
@@ -12,20 +13,20 @@
 
     const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(MOBILE ? 1.5 : 2, devicePixelRatio || 1));
-    renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+    renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.3;
     renderer.physicallyCorrectLights = true; renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
     renderer.setClearColor(0, 0);
     host.prepend(renderer.domElement);
     const scene = new T.Scene();
-    scene.environment = new T.PMREMGenerator(renderer).fromScene(new T.RoomEnvironment(), .04).texture;
-    const cam = new T.PerspectiveCamera(34, 1, 1, 3000); cam.position.set(0, 95, 360); cam.lookAt(0, 72, 0);
+    scene.environment = new T.PMREMGenerator(renderer).fromScene(new T.RoomEnvironment(), .04).texture;   // reflections that make the gold shine
+    const cam = new T.PerspectiveCamera(34, 1, 1, 3000); cam.position.set(0, 88, 360); cam.lookAt(0, 58, 0);   // framed below the curtain valance
 
     /* lights: dim fill + the spotlight that "clicks on" */
-    const hemi = new T.HemisphereLight('#ffe9f6', '#2a0a1d', .25); scene.add(hemi);
+    const hemi = new T.HemisphereLight('#eaf2ff', '#0a1a33', .25); scene.add(hemi);
     const spot = new T.SpotLight('#fff3d6', 0, 900, .36, .55, 1);
     spot.position.set(0, 420, 120); spot.target.position.set(0, 40, 0); spot.castShadow = true;
     spot.shadow.mapSize.set(1024, 1024); spot.shadow.bias = -.0005; scene.add(spot, spot.target);
-    const rim = new T.DirectionalLight('#9fe3ef', 0); rim.position.set(-200, 120, -150); scene.add(rim);
+    const rim = new T.DirectionalLight('#ffb3d6', 0);   // pink rim light: the theme's second tone rim.position.set(-200, 120, -150); scene.add(rim);
     // visible light cone
     const coneH = 430, coneGeo = new T.CylinderGeometry(8, Math.tan(.36) * coneH * .95, coneH, 48, 1, true);
     const coneMat = new T.ShaderMaterial({
@@ -38,12 +39,17 @@
     // stage floor that catches the spotlight pool + shadow
     const fade = document.createElement('canvas'); fade.width = fade.height = 256;
     { const g = fade.getContext('2d'), gr = g.createRadialGradient(128, 128, 20, 128, 128, 128); gr.addColorStop(0, '#fff'); gr.addColorStop(.55, '#bbb'); gr.addColorStop(1, '#000'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); }
-    const floor = new T.Mesh(new T.CircleGeometry(320, 64), new T.MeshStandardMaterial({ color: '#4a1536', roughness: .55, metalness: .1, transparent: true, alphaMap: new T.CanvasTexture(fade) }));   // soft edge, no hard line
-    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+    const floor = new T.Mesh(new T.CircleGeometry(320, 64), new T.MeshStandardMaterial({ color: '#0f2a4a', roughness: .55, metalness: .1, transparent: true, alphaMap: new T.CanvasTexture(fade) }));   // soft edge, no hard line
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -16; floor.receiveShadow = true; scene.add(floor);
+    // round velvet podium with a gold rim; the trophy stands on top of it (its top is at y = 0)
+    const velvet = new T.MeshPhysicalMaterial({ color: '#1f3f7a', roughness: .85, sheen: 1, sheenColor: new T.Color('#7fb0ff'), sheenRoughness: .5 });
+    const podium = new T.Mesh(new T.CylinderGeometry(58, 62, 16, MOBILE ? 48 : 80), velvet); podium.position.y = -8; podium.receiveShadow = podium.castShadow = true; scene.add(podium);
+    const rimGold = new T.Mesh(new T.TorusGeometry(58.5, 1.6, 12, MOBILE ? 48 : 96), new T.MeshPhysicalMaterial({ color: '#ffc845', metalness: 1, roughness: .25 }));
+    rimGold.rotation.x = Math.PI / 2; scene.add(rimGold);
 
     /* the trophy */
-    const gold = new T.MeshPhysicalMaterial({ color: '#ffc845', metalness: 1, roughness: .2, clearcoat: .6, clearcoatRoughness: .15, envMapIntensity: 1.3 });
-    const marble = new T.MeshPhysicalMaterial({ color: '#5a1840', roughness: .28, metalness: .05, clearcoat: 1, clearcoatRoughness: .1 });
+    const gold = new T.MeshPhysicalMaterial({ color: '#ffd35a', metalness: 1, roughness: .16, clearcoat: .7, clearcoatRoughness: .1, envMapIntensity: 2.2 });
+    const marble = new T.MeshPhysicalMaterial({ color: '#123a6b', roughness: .28, metalness: .05, clearcoat: 1, clearcoatRoughness: .1 });
     const trophy = new T.Group();
     const prof = [[0, 18], [10, 18], [12, 22], [7, 28], [5, 38], [6, 46], [12, 50], [16, 52], [27, 60], [34, 74], [38, 92], [40, 108], [42, 120], [39, 121], [36, 110], [33, 94], [28, 80], [20, 70], [10, 66], [0, 65]]
       .map(([x, y]) => new T.Vector2(x, y));
@@ -86,9 +92,16 @@
       fragmentShader: 'uniform float uA; varying float vS; void main(){ vec2 c = gl_PointCoord - .5; float d = length(c); float a = smoothstep(.5, .0, d) * uA; vec3 col = mix(vec3(1.0,.78,.3), vec3(1.0,.97,.85), vS); gl_FragColor = vec4(col*a, a); }'
     });
     const points = new T.Points(pGeo, pMat); scene.add(points);
+    // a few glints that twinkle on the gold while it's under the light (they ride along with the trophy)
+    const G = 26, gGeo = new T.BufferGeometry(), gPos = new Float32Array(G * 3), gSeed = new Float32Array(G);
+    for (let i = 0; i < G; i++) { const j = (Math.random() * N | 0) * 3; gPos.set([fromT[j] * 1.02, fromT[j + 1], fromT[j + 2] * 1.02 + 2], i * 3); gSeed[i] = Math.random(); }
+    gGeo.setAttribute('position', new T.BufferAttribute(gPos, 3)); gGeo.setAttribute('seed', new T.BufferAttribute(gSeed, 1));
+    const gMat = pMat.clone(); gMat.uniforms.uA.value = 0; gMat.uniforms.uPx.value = renderer.getPixelRatio() * 1.8;
+    const glints = new T.Points(gGeo, gMat); trophy.add(glints);
 
     /* layout */
-    const size = () => { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h, false); renderer.domElement.style.cssText = 'width:100%;height:100%;display:block'; cam.aspect = w / h; cam.position.z = w / h < .9 ? 470 : 360; cam.updateProjectionMatrix(); pMat.uniforms.uPx.value = renderer.getPixelRatio(); };
+    const size = () => { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h, false); renderer.domElement.style.cssText = 'width:100%;height:100%;display:block'; cam.aspect = w / h; baseZ = w / h < .9 ? 500 : 395; cam.position.z = baseZ + dolly; cam.updateProjectionMatrix(); pMat.uniforms.uPx.value = renderer.getPixelRatio(); };
+    let baseZ = 360, dolly = 0;   // dolly: extra camera distance, eased away as the trophy is revealed
     size(); addEventListener('resize', size);
 
     /* timeline: off -> spotlight on -> trophy spins -> burst into sparkles -> "6" -> back ... */
@@ -100,15 +113,17 @@
       raf = 0;
       const dt = Math.min(.25, (now - (last || now)) / 1000); last = now; st += dt;   // real time, so slow devices don't play in slow motion
       const t = now / 1000;
-      pMat.uniforms.uT.value = t;
+      pMat.uniforms.uT.value = t; gMat.uniforms.uT.value = t * 1.3;
+      gMat.uniforms.uA.value = shape === 'trophy' && state !== 'morph' ? lightOn * (.55 + .45 * Math.sin(t * 2.3)) : 0;
       // spotlight warms up with a little flicker
       if (state !== 'idle') lightOn = Math.min(1, lightOn + dt * 2.2);
       const flick = lightOn < 1 ? (Math.sin(t * 60) > .2 ? 1 : .55) : 1;
-      spot.intensity = 5200 * lightOn * flick; rim.intensity = 1.6 * lightOn; hemi.intensity = .25 + .35 * lightOn;
+      spot.intensity = 5200 * lightOn * flick; rim.intensity = 1.6 * lightOn; hemi.intensity = .35 + .6 * lightOn;
       coneMat.uniforms.uOn.value = lightOn * flick;
       const spin = reduce ? 0 : t * .9;
       if (state === 'intro') {   // trophy rises into the light
-        const p = Math.min(1, st / 1.4); trophy.position.y = -60 * (1 - ease(p)); trophy.rotation.y = spin + (1 - p) * 4;
+        const p = Math.min(1, st / 1.8); trophy.position.y = -60 * (1 - ease(p)); trophy.rotation.y = spin + (1 - p) * 4;
+        dolly = 120 * (1 - ease(p)); cam.position.z = baseZ + dolly;   // the camera glides in as it rises
         if (p >= 1) { state = 'show'; st = 0; onEvent('lit'); }
       } else if (state === 'show') {
         (shape === 'trophy' ? trophy : six).rotation.y = spin;
@@ -134,12 +149,14 @@
       renderer.render(scene, cam);
       if (visible) raf = requestAnimationFrame(frame);
     }
+    const start = () => { if (started) return; started = true; state = 'intro'; st = 0; dolly = 120; cam.position.z = baseZ + dolly; onEvent('on'); if (!raf) { last = 0; raf = requestAnimationFrame(frame); } };
+    trophy.position.y = -60;   // hidden below the podium until the show starts
     renderer.render(scene, cam);
     new IntersectionObserver(es => {
       visible = es[0].isIntersecting;
-      if (visible && es[0].intersectionRatio > .35 && !started) { started = true; state = 'intro'; st = 0; onEvent('on'); }
+      if (autoStart && visible && es[0].intersectionRatio > .35 && !started) start();
       if (visible && !raf) { last = 0; raf = requestAnimationFrame(frame); }
     }, { threshold: [0, .35, .6] }).observe(host);
-    return { replay: startMorph };
+    return { replay: startMorph, start };
   };
 })();
