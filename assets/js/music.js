@@ -122,6 +122,7 @@
     M.on ? start() : stop(); notify(); return M.on;
   };
   M.start = start;
+  M.stop = stop;
   // first interaction anywhere starts the music (browser autoplay rules)
   const first = e => {
     if (e.target && e.target.closest && e.target.closest('#mus')) return;   // the music button handles itself

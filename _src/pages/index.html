@@ -36,6 +36,28 @@ nav: home
 </div></div>
 </div>
 
+<!-- ============ TOUR VIDEO: the 2½-minute motion review of the new logo + site ============ -->
+<section class="tour-sec" id="tour">
+  <div class="wrap center">
+    <span class="eyebrow" data-reveal>🎬 Take the tour</span>
+    <h2 data-reveal style="--i:1">The palace, in <span class="s">motion.</span></h2>
+    <p class="lede" data-reveal style="--i:2">A two-and-a-half-minute walk through the new logo and the whole site, from Lacy's loading screen to the stay estimator. Turn your sound on.</p>
+    <div class="tour-frame" data-reveal="scale" style="--i:3">
+      <video id="tourVid" controls playsinline preload="none" poster="assets/video/revamp-reel-poster.webp" aria-label="Happy Pets Palace tour video">
+        <source src="assets/video/revamp-reel.mp4" type="video/mp4">
+      </video>
+    </div>
+  </div>
+</section>
+<script>
+/* the background music steps aside while the tour plays, and comes back after */
+(() => { const v = document.getElementById('tourVid'); if (!v) return; let resume = false;
+  v.addEventListener('play', () => { const M = window.HPPMusic; if (M && M.playing && M.stop) { resume = true; M.stop(); } });
+  const back = () => { const M = window.HPPMusic; if (resume && M && M.start && M.on) { resume = false; M.start(); } };
+  v.addEventListener('pause', back); v.addEventListener('ended', back);
+})();
+</script>
+
 <!-- ============ CATEGORY HUB: everything below the hero lives behind these buttons (core.js opens one at a time) ============ -->
 <section class="cat-hub-sec" id="explore">
   <div class="wrap">
