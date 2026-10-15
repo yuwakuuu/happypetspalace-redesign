@@ -22,11 +22,11 @@
     const cam = new T.PerspectiveCamera(34, 1, 1, 3000); cam.position.set(0, 88, 360); cam.lookAt(0, 58, 0);   // framed below the curtain valance
 
     /* lights: dim fill + the spotlight that "clicks on" */
-    const hemi = new T.HemisphereLight('#eaf2ff', '#0a1a33', .25); scene.add(hemi);
+    const hemi = new T.HemisphereLight('#f6eaf1', '#2a0819', .25); scene.add(hemi);
     const spot = new T.SpotLight('#fff3d6', 0, 900, .36, .55, 1);
     spot.position.set(0, 420, 120); spot.target.position.set(0, 40, 0); spot.castShadow = true;
     spot.shadow.mapSize.set(1024, 1024); spot.shadow.bias = -.0005; scene.add(spot, spot.target);
-    const rim = new T.DirectionalLight('#ffb3d6', 0);   // pink rim light: the theme's second tone rim.position.set(-200, 120, -150); scene.add(rim);
+    const rim = new T.DirectionalLight('#a9dbe4', 0);   // pink rim light: the theme's second tone rim.position.set(-200, 120, -150); scene.add(rim);
     // visible light cone
     const coneH = 430, coneGeo = new T.CylinderGeometry(8, Math.tan(.36) * coneH * .95, coneH, 48, 1, true);
     const coneMat = new T.ShaderMaterial({
@@ -39,17 +39,17 @@
     // stage floor that catches the spotlight pool + shadow
     const fade = document.createElement('canvas'); fade.width = fade.height = 256;
     { const g = fade.getContext('2d'), gr = g.createRadialGradient(128, 128, 20, 128, 128, 128); gr.addColorStop(0, '#fff'); gr.addColorStop(.55, '#bbb'); gr.addColorStop(1, '#000'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); }
-    const floor = new T.Mesh(new T.CircleGeometry(320, 64), new T.MeshStandardMaterial({ color: '#0f2a4a', roughness: .55, metalness: .1, transparent: true, alphaMap: new T.CanvasTexture(fade) }));   // soft edge, no hard line
+    const floor = new T.Mesh(new T.CircleGeometry(320, 64), new T.MeshStandardMaterial({ color: '#3a0c26', roughness: .55, metalness: .1, transparent: true, alphaMap: new T.CanvasTexture(fade) }));   // soft edge, no hard line
     floor.rotation.x = -Math.PI / 2; floor.position.y = -16; floor.receiveShadow = true; scene.add(floor);
     // round velvet podium with a gold rim; the trophy stands on top of it (its top is at y = 0)
-    const velvet = new T.MeshPhysicalMaterial({ color: '#1f3f7a', roughness: .85, sheen: 1, sheenColor: new T.Color('#7fb0ff'), sheenRoughness: .5 });
+    const velvet = new T.MeshPhysicalMaterial({ color: '#6b1c47', roughness: .85, sheen: 1, sheenColor: new T.Color('#7fcad7'), sheenRoughness: .5 });
     const podium = new T.Mesh(new T.CylinderGeometry(58, 62, 16, MOBILE ? 48 : 80), velvet); podium.position.y = -8; podium.receiveShadow = podium.castShadow = true; scene.add(podium);
     const rimGold = new T.Mesh(new T.TorusGeometry(58.5, 1.6, 12, MOBILE ? 48 : 96), new T.MeshPhysicalMaterial({ color: '#ffc845', metalness: 1, roughness: .25 }));
     rimGold.rotation.x = Math.PI / 2; scene.add(rimGold);
 
     /* the trophy */
     const gold = new T.MeshPhysicalMaterial({ color: '#ffd35a', metalness: 1, roughness: .16, clearcoat: .7, clearcoatRoughness: .1, envMapIntensity: 2.2 });
-    const marble = new T.MeshPhysicalMaterial({ color: '#123a6b', roughness: .28, metalness: .05, clearcoat: 1, clearcoatRoughness: .1 });
+    const marble = new T.MeshPhysicalMaterial({ color: '#521034', roughness: .28, metalness: .05, clearcoat: 1, clearcoatRoughness: .1 });
     const trophy = new T.Group();
     const prof = [[0, 18], [10, 18], [12, 22], [7, 28], [5, 38], [6, 46], [12, 50], [16, 52], [27, 60], [34, 74], [38, 92], [40, 108], [42, 120], [39, 121], [36, 110], [33, 94], [28, 80], [20, 70], [10, 66], [0, 65]]
       .map(([x, y]) => new T.Vector2(x, y));

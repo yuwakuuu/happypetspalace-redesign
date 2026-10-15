@@ -13,7 +13,7 @@
   const SIZE = 100;                       // world units per em
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MOBILE = matchMedia('(max-width: 700px), (pointer: coarse)').matches;   // lighter geometry + resolution on phones
-  H.colors = { plum: '#2f6fd6', teal: '#ff7fb8', pink: '#ff8fc6', white: '#fff4fb', butter: '#ffc23d', grape: '#8a5cff', brown: '#b0703c' };
+  H.colors = { plum: '#6b1c47', teal: '#2e8496', pink: '#43a7b8', white: '#f4fbfc', butter: '#ffc23d', grape: '#7a2a56', brown: '#b0703c' };
 
   /* ---------- shared building blocks ---------- */
   const fonts = {};
@@ -80,8 +80,8 @@
     key.position.set(-200, 340, 640); key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024); key.shadow.radius = 14; key.shadow.blurSamples = 20; key.shadow.bias = -.002;
     scene.add(key, key.target);
-    const rim = new T.DirectionalLight('#d9ecff', Lt.rim); rim.position.set(400, -150, 300); scene.add(rim);
-    scene.add(new T.HemisphereLight('#ffffff', '#dce8ff', Lt.hemi));
+    const rim = new T.DirectionalLight('#f3e3ec', Lt.rim); rim.position.set(400, -150, 300); scene.add(rim);
+    scene.add(new T.HemisphereLight('#ffffff', '#f3e3ec', Lt.hemi));
     const floor = new T.Mesh(new T.PlaneGeometry(1, 1), new T.ShadowMaterial({ opacity: Lt.shadow }));
     floor.position.z = -SIZE * .26; floor.receiveShadow = true; scene.add(floor);
     return { scene, key, floor };
