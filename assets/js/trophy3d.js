@@ -1,4 +1,4 @@
-/* 3D trophy stage — a gold trophy on a velvet podium under a spotlight that bursts into sparkles and re-forms as a giant "6"
+/* 3D trophy stage — a gold trophy on a velvet podium under a spotlight that bursts into sparkles and re-forms as a giant "6×"
    (Voted Best Pet Boarding in Mesa, six years running). With autoStart:false the page starts it (after its curtain
    reveal) by calling .start(); otherwise it starts when scrolled into view. Tap to replay the morph.
    Uses three r147 + MeshSurfaceSampler + the Fredoka typeface already loaded for the titles. */
@@ -67,8 +67,13 @@
 
     /* the big puffy "6" */
     const font = new T.Font(window.HPP_FONTS.fredoka);
-    let sixGeo = new T.TextGeometry('6', { font, size: 120, height: 8, curveSegments: 18, bevelEnabled: true, bevelThickness: 22, bevelSize: 7, bevelOffset: -2, bevelSegments: 14 });
-    sixGeo.deleteAttribute('normal'); sixGeo.deleteAttribute('uv'); sixGeo = T.BufferGeometryUtils.mergeVertices(sixGeo, .02); sixGeo.computeVertexNormals();
+    /* "6×": a big 6 and a smaller x beside it (the 3D font has no × glyph), merged into one puffy shape */
+    const puff = (ch, size, bev) => { let g = new T.TextGeometry(ch, { font, size, height: 8, curveSegments: 18, bevelEnabled: true, bevelThickness: bev, bevelSize: bev * .32, bevelOffset: -2, bevelSegments: 14 });
+      g.deleteAttribute('normal'); g.deleteAttribute('uv'); g.computeBoundingBox(); return g; };
+    const g6 = puff('6', 120, 22), gx = puff('x', 66, 14);
+    gx.translate(g6.boundingBox.max.x + 16 - gx.boundingBox.min.x, 0, 0);
+    let sixGeo = T.BufferGeometryUtils.mergeBufferGeometries([g6, gx]);
+    sixGeo = T.BufferGeometryUtils.mergeVertices(sixGeo, .02); sixGeo.computeVertexNormals();
     sixGeo.computeBoundingBox(); { const b = sixGeo.boundingBox; sixGeo.translate(-(b.min.x + b.max.x) / 2, -b.min.y + 18, -(b.min.z + b.max.z) / 2); }
     const six = new T.Mesh(sixGeo, gold); six.castShadow = true; six.scale.setScalar(.001); scene.add(six);
 
