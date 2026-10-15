@@ -103,7 +103,27 @@ def hero(a):
   </div>
 </header>'''
 
-def build(page):
+OLD_LOGO = '<img src="assets/logo.png" alt="Happy Pets Palace &amp; Playground">'
+BRANDS = {
+    'current': {   # the logo the site has always used
+        'icons': """<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">""",
+        'logo_head': OLD_LOGO, 'logo_foot': OLD_LOGO, 'logo_foot_cls': '', 'cta_badge': '', 'banner': '',
+    },
+    'rebrand': {   # the proposed new logos, shown on rebrand.html so both looks can be compared
+        'icons': ('<link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png">\n'
+                  '<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">\n'
+                  '<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">\n'
+                  '<meta name="robots" content="noindex">'),   # a preview page: keep it out of search results
+        'logo_head': '<img src="assets/img/logo-horizontal.png" alt="Happy Pets Palace &amp; Playground" width="1239" height="240">',
+        'logo_foot': '<img src="assets/img/logo-stacked.png" alt="Happy Pets Palace &amp; Playground" width="830" height="420" loading="lazy">',
+        'logo_foot_cls': ' logo-foot',
+        'cta_badge': '<img class="cta-badge" src="assets/img/logo-badge.png" alt="Happy Pets Palace &amp; Playground badge" width="512" height="512" loading="lazy" data-reveal="scale">',
+        'banner': '<a class="rebrand-pill" href="index.html">✨ Rebrand preview · <b>see the current logo</b></a>',
+    },
+}
+
+def build(page, brand='current', out_name=None):
+    B = BRANDS[brand]
     text = page.read_text(encoding='utf-8')
     m = re.match(r'\s*<!--(.*?)-->', text, re.S)
     meta = {}
@@ -112,8 +132,9 @@ def build(page):
             k, _, v = line.partition(':'); meta[k.strip()] = v.strip()
         text = text[m.end():]
     text = re.sub(r'\[\[hero (.*?)\]\]', lambda mm: hero(attrs(mm.group(1))), text, flags=re.S)
-    text = text.replace('[[book_cta]]', BOOK_CTA).replace('[[book_buttons]]', BOOK_BUTTONS).replace('[[reviews_strip]]', reviews_strip()).replace('[[reviews_grid]]', reviews_grid()).replace('[[reviews_float]]', reviews_float()).replace('[[award]]', AWARD)
+    text = text.replace('[[book_cta]]', BOOK_CTA).replace('[[book_buttons]]', BOOK_BUTTONS).replace('[[reviews_strip]]', reviews_strip()).replace('[[reviews_grid]]', reviews_grid()).replace('[[reviews_float]]', reviews_float()).replace('[[award]]', AWARD).replace('[[cta_badge]]', B['cta_badge'])
     name = page.stem
+    out_name = out_name or name
     title = meta.get('title', 'Happy Pets Palace')
     out = layout
     nav = meta.get('nav', '')
@@ -123,10 +144,13 @@ def build(page):
         out = out.replace('{{cur_%s}}' % key, ' aria-current="page"' if nav == key else '')
     out = (out.replace('{{doc_title}}', 'Happy Pets Palace' if name == 'index' else f'{title} | Happy Pets Palace')
               .replace('{{description}}', html.escape(meta.get('description', ''), quote=True))
-              .replace('{{page}}', name).replace('{{bulldog}}', bulldog).replace('{{pup}}', pup).replace('{{lacy}}', lacy).replace('{{v}}', VERSION).replace('{{body}}', text.strip()))
-    (ROOT / f'{name}.html').write_text(out, encoding='utf-8')
-    return name
+              .replace('{{page}}', name).replace('{{bulldog}}', bulldog).replace('{{pup}}', pup).replace('{{lacy}}', lacy).replace('{{v}}', VERSION).replace('{{body}}', B['banner'] + text.strip()))
+    for k in ('icons', 'logo_head', 'logo_foot', 'logo_foot_cls'):
+        out = out.replace('{{%s}}' % k, B[k])
+    (ROOT / f'{out_name}.html').write_text(out, encoding='utf-8')
+    return out_name
 
 if __name__ == '__main__':
     built = [build(p) for p in sorted((SRC / 'pages').glob('*.html'))]
+    built.append(build(SRC / 'pages' / 'index.html', 'rebrand', 'rebrand'))   # the homepage again, with the new logos
     print('built', len(built), 'pages:', ', '.join(built))
