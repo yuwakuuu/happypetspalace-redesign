@@ -1076,3 +1076,31 @@ h3,h4{font-family:var(--font-l);font-weight:700;letter-spacing:-.015em}
 
 /* original logo in the footer: give the script lettering room to read */
 footer .foot .logo img{height:140px}
+
+/* =========================================================
+   Lite mode (html.lite): same site, minus the heavy effects, for older phones and computers
+   ========================================================= */
+.lite-btn{font-size:17px}
+.lite-btn.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.lite-toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:260;translate:-50% 20px;opacity:0;display:flex;align-items:center;gap:12px;
+  max-width:min(560px,calc(100vw - 32px));padding:12px 14px 12px 18px;border-radius:18px;background:var(--plum);color:#fff;font:500 15px/1.35 var(--font-b);
+  box-shadow:0 18px 40px -16px rgba(42,8,25,.55);transition:opacity .35s,translate .35s}
+.lite-toast.in{opacity:1;translate:-50% 0}
+.lite-toast button{flex:none;border:0;border-radius:12px;padding:9px 14px;background:#fff;color:var(--plum);font:700 14px var(--font-b);cursor:pointer}
+.lite-toast button.x{background:transparent;color:#fff;padding:6px 8px;opacity:.8}
+/* headings render as normal text in the brand colours */
+html.lite h1,html.lite h2{color:var(--plum)}
+html.lite h1 .s,html.lite h2 .s{font-family:var(--font-d);font-weight:700;color:var(--teal-d);font-size:1em}
+html.lite .live-title .grass{color:#3c9a2a}
+html.lite .trophy-stage h2,html.lite .cta h2{color:#fff}
+html.lite .trophy-stage .t3d .fallback{display:grid!important}
+/* drop the GPU-heavy paint: blurs, glass, big soft shadows and decorative loops */
+html.lite *,html.lite *::before,html.lite *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.lite .nav{background:var(--card)}
+html.lite #paws,html.lite .fx,html.lite .bubbles,html.lite .stage .rays{display:none!important}
+html.lite .marquee .track,html.lite .stage .ring,html.lite .stage .ring span i,html.lite .dog-fab::before,html.lite .dog-fab .fab-dog{animation:none!important}
+html.lite [data-reveal]{opacity:1!important;transform:none!important;translate:none!important;scale:none!important;transition:none!important}
+html.lite .card,html.lite .svc,html.lite .panel,html.lite .rvf-in{box-shadow:0 6px 18px -12px rgba(42,8,25,.35)}
+html.lite[data-theme="dark"] h2 .s{color:var(--teal)}
+.lite-toast span{min-width:0}
+@media (max-width:640px){.lite-toast{width:calc(100vw - 32px);bottom:calc(100px + env(safe-area-inset-bottom,0px));font-size:14px}}

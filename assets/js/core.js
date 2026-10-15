@@ -1,7 +1,8 @@
 /* Happy Pets Palace — shared site engine (every page).
    Each feature only runs when its markup exists on the current page. */
 (() => {
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const LITE = !!window.HPP_LITE;
+  const reduce = LITE || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = matchMedia('(pointer:fine)').matches;
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const root = document.documentElement;
@@ -76,6 +77,7 @@
     const ld = $('#loader');
     let visited = false; try { visited = !!sessionStorage.getItem('hpp-visited'); sessionStorage.setItem('hpp-visited', '1'); } catch {}
     if (!ld) { readyResolve(); return; }
+    if (LITE) visited = true;
     if (visited) ld.classList.add('quick');
     const bar = $('.bar i', ld), paw = $('.bar b', ld), pct = $('.pct', ld), msg = visited ? $('.tag', ld) : $('.msg', ld);
     const lines = ['Fetching the fun…', 'Inflating the letters…', 'Fluffing the fur…', 'Filling the splash pools…', 'Blowing bubbles…', 'Waking up the pack…'];
@@ -106,6 +108,27 @@
     })();
     setTimeout(() => { if (!done) finish(); }, 9000);
   })();
+
+  /* ================= lite mode toggle (+ a one-time hint on slow devices) ================= */
+  on('#liteBtn', b => {
+    b.setAttribute('aria-pressed', String(LITE)); b.classList.toggle('on', LITE);
+    const set = v => { try { localStorage.setItem('hpp-lite', v ? 'on' : 'off'); } catch {} location.reload(); };
+    b.addEventListener('click', () => set(!LITE));
+    const toast = (msg, label, fn) => {
+      let seen = false; try { seen = sessionStorage.getItem('hpp-lite-hint'); sessionStorage.setItem('hpp-lite-hint', '1'); } catch {}
+      if (seen) return;
+      const d = document.createElement('div'); d.className = 'lite-toast'; d.setAttribute('role', 'status');
+      d.innerHTML = `<span>${msg}</span><button type="button">${label}</button><button type="button" class="x" aria-label="Dismiss">✕</button>`;
+      document.body.append(d); requestAnimationFrame(() => d.classList.add('in'));
+      const bye = () => { d.classList.remove('in'); setTimeout(() => d.remove(), 400); };
+      d.querySelector('button').onclick = fn; d.querySelector('.x').onclick = bye; setTimeout(bye, 9000);
+    };
+    if (LITE && window.HPP_LITE_AUTO) HPP.ready.then(() => setTimeout(() => toast('⚡ Lite mode is on for smoother scrolling on this device.', 'Turn off', () => set(false)), 1200));
+    if (!LITE) HPP.ready.then(() => {        // watch the frame rate for a few seconds; offer Lite mode if the device is struggling
+      let n = 0, t0 = 0; const f = t => { if (!t0) t0 = t; n++; if (t - t0 < 4000) requestAnimationFrame(f); else if (n / ((t - t0) / 1000) < 28 && !document.hidden) toast('Page feeling slow? ⚡ Lite mode keeps everything, minus the heavy effects.', 'Turn on Lite mode', () => set(true)); };
+      setTimeout(() => requestAnimationFrame(f), 1500);
+    });
+  });
 
   /* ================= theme / sound / menu ================= */
   on('#yr', el => el.textContent = new Date().getFullYear());
@@ -252,7 +275,7 @@
   $$('.track').forEach(t => t.innerHTML += t.innerHTML);
 
   /* ================= 3D puffy + fur headings ================= */
-  const H3 = window.HPP3D || {};
+  const H3 = LITE ? {} : (window.HPP3D || {});
   const can3d = !!H3.ok, canFur = !!H3.fur;
   /** split a heading into words; text -> puffy 3D, <span class="s"> -> accent-coloured 3D,
       <span class="s fluffy"> -> fluffy fur (used sparingly, only where "fluffy" means something) */
@@ -772,6 +795,7 @@
 
   /* ================= raining paw prints ================= */
   on('#paws', cv => {
+    if (LITE) { cv.remove(); return; }
     const ctx = cv.getContext('2d');
     let W, Hh, dpr;
     const size = () => { dpr = Math.min(2, devicePixelRatio || 1); W = cv.width = innerWidth * dpr; Hh = cv.height = innerHeight * dpr; };
