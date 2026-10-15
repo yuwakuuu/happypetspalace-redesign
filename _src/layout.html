@@ -10,20 +10,16 @@
 <link rel="stylesheet" href="assets/css/site.css?v={{v}}">
 <script>try{var t=localStorage.getItem('hpp-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <!-- 3D lettering: three.js r147 classic build, bundled locally so the site works offline and from disk -->
-<script defer src="assets/vendor/three/three.min.js?v={{v}}"></script>
-<script defer src="assets/vendor/three/FontLoader.js?v={{v}}"></script>
-<script defer src="assets/vendor/three/TextGeometry.js?v={{v}}"></script>
-<script defer src="assets/vendor/three/RoomEnvironment.js?v={{v}}"></script>
-<script defer src="assets/vendor/three/BufferGeometryUtils.js?v={{v}}"></script>
-<script defer src="assets/vendor/three/MeshSurfaceSampler.js?v={{v}}"></script>
-<script defer src="assets/fonts/fredoka.js?v={{v}}"></script>
+<script>/* Lite mode: low-end devices (or anyone who taps ⚡) skip the 3D lettering, fur text, 3D trophy and paw canvas */
+(function(){var d=document.documentElement,p=null;try{p=localStorage.getItem('hpp-lite')}catch(e){}
+var n=navigator,c=n.connection||{},m=n.deviceMemory,k=n.hardwareConcurrency,auto=c.saveData||/(^|-)2g$/.test(c.effectiveType||'')||(k&&k<=2)||(m&&m<=2)||(k&&k<=4&&m&&m<=4);
+var lite=p==='on'||(p!=='off'&&!!auto);window.HPP_LITE=lite;window.HPP_LITE_AUTO=lite&&p!=='on';if(lite)d.classList.add('lite');
+if(!lite){var v='{{v}}',f=['assets/vendor/three/three.min.js','assets/vendor/three/FontLoader.js','assets/vendor/three/TextGeometry.js','assets/vendor/three/RoomEnvironment.js','assets/vendor/three/BufferGeometryUtils.js','assets/vendor/three/MeshSurfaceSampler.js','assets/fonts/fredoka.js','assets/js/puffy3d.js','assets/js/fur.js','assets/js/trophy3d.js'];
+for(var i=0;i<f.length;i++)document.write('<script defer src="'+f[i]+'?v='+v+'"><\/script>');}})();</script>
 <script defer src="assets/audio/bark.js?v={{v}}"></script>
 <script defer src="assets/audio/pop.js?v={{v}}"></script>
 <script defer src="assets/js/sfx.js?v={{v}}"></script>
 <script defer src="assets/js/music.js?v={{v}}"></script>
-<script defer src="assets/js/puffy3d.js?v={{v}}"></script>
-<script defer src="assets/js/fur.js?v={{v}}"></script>
-<script defer src="assets/js/trophy3d.js?v={{v}}"></script>
 <script defer src="assets/js/core.js?v={{v}}"></script>
 <script defer src="assets/js/chat.js?v={{v}}"></script>
 </head>
@@ -89,6 +85,7 @@
   </ul>
   <button class="icon-btn mus" id="mus" aria-label="Background music" aria-pressed="false" title="Background music"><span class="eq"><i></i><i></i><i></i><i></i></span></button>
   <button class="icon-btn snd" id="snd" aria-label="Sound effects" aria-pressed="true">🔊</button>
+  <button class="icon-btn lite-btn" id="liteBtn" aria-pressed="false" title="Lite mode: smoother on older phones and computers" aria-label="Lite mode">⚡</button>
   <button class="icon-btn" id="theme" aria-label="Toggle dark mode">🌙</button>
   <button class="icon-btn burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
   <div class="book-cta" style="position:relative">
