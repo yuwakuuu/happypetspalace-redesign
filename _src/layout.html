@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{doc_title}}</title>
 <meta name="description" content="{{description}}">
-<link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
-<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+{{icons}}
 <link rel="stylesheet" href="assets/vendor/fonts/fonts.css?v={{v}}">
 <link rel="stylesheet" href="assets/css/site.css?v={{v}}">
 <script>try{var t=localStorage.getItem('hpp-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
@@ -56,7 +54,7 @@
 </div>
 
 <nav class="nav" id="nav" aria-label="Main">
-  <a class="logo" href="index.html" aria-label="Happy Pets Palace &amp; Playground home"><img src="assets/img/logo-horizontal.png" alt="Happy Pets Palace &amp; Playground" width="1239" height="240"></a>
+  <a class="logo" href="index.html" aria-label="Happy Pets Palace &amp; Playground home">{{logo_head}}</a>
   <ul class="menu" id="menu">
     <li><button aria-haspopup="true"{{cur_locations}}>Locations <span class="caret">▼</span></button>
       <ul class="drop">
@@ -113,7 +111,7 @@
   <div class="wrap">
     <div class="foot">
       <div>
-        <a class="logo logo-foot" href="index.html" style="display:inline-flex"><img src="assets/img/logo-stacked.png" alt="Happy Pets Palace &amp; Playground" width="830" height="420" loading="lazy"></a>
+        <a class="logo{{logo_foot_cls}}" href="index.html" style="display:inline-flex">{{logo_foot}}</a>
         <p style="color:var(--ink-2);margin-top:14px;max-width:300px;font-size:16px">Dog boarding, daycare and grooming in Mesa and Chandler, Arizona. Six years running as Mesa's Best Pet Boarding.</p>
         <div class="socials">
           <a href="https://www.facebook.com/happypetspalacemesa" target="_blank" rel="noopener" aria-label="Facebook">f</a>

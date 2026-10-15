@@ -1059,3 +1059,17 @@ footer .credits a{color:inherit}
 
 /* loading screens: no floating bubbles */
 #loader .fx .b,#wipe .fx .b{display:none}
+
+/* ---------- the logo's typeface (Bricolage Grotesque) for the site's "voice" bits: labels, buttons, menu, card titles ---------- */
+:root{--font-l:"Bricolage Grotesque",var(--font-b)}
+h3,h4{font-family:var(--font-l);font-weight:700;letter-spacing:-.015em}
+.eyebrow,.award-ey{font-family:var(--font-l);font-weight:700;letter-spacing:.22em}   /* like the logo's spaced "& PLAYGROUND" */
+.btn{font-family:var(--font-l);font-weight:700}
+.menu>li>a,.menu>li>button,.drop a{font-family:var(--font-l);font-weight:600}
+.cat-btn b,.cat-title{font-family:var(--font-l);font-weight:800;letter-spacing:-.02em}
+
+/* rebrand.html only: a little tag that links back to the current look */
+.rebrand-pill{position:fixed;left:16px;bottom:16px;z-index:210;display:inline-flex;gap:6px;align-items:center;padding:10px 16px;border-radius:999px;
+  background:#581f47;color:#fff;font:600 14px var(--font-l);text-decoration:none;box-shadow:0 10px 26px -10px rgba(0,0,0,.45);transition:transform .35s var(--spring)}
+.rebrand-pill b{color:#9fd5ea}
+.rebrand-pill:hover{transform:translateY(-3px)}
