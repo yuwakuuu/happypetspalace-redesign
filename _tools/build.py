@@ -27,14 +27,14 @@ lacy = (SRC / 'lacy.svg').read_text(encoding='utf-8').strip()         # Lacy the
 AWARD = '''<div class="award-card" data-reveal>
   <svg class="award-medal" viewBox="0 0 120 150" aria-hidden="true">
     <defs><linearGradient id="medalGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe69a"/><stop offset=".5" stop-color="#f5c542"/><stop offset="1" stop-color="#d4921c"/></linearGradient></defs>
-    <path d="M38 78 L22 146 L42 134 L52 150 L62 86Z" fill="#ec6fa9"/><path d="M82 78 L98 146 L78 134 L68 150 L58 86Z" fill="#1f5c9e"/>
+    <path d="M38 78 L22 146 L42 134 L52 150 L62 86Z" fill="#43a7b8"/><path d="M82 78 L98 146 L78 134 L68 150 L58 86Z" fill="#7a2a56"/>
     <g transform="translate(60 60)">
       <path fill="url(#medalGold)" d="''' + ' '.join(f"{'M' if i == 0 else 'L'}{(52 if i % 2 == 0 else 45) * __import__('math').cos(i * __import__('math').pi / 16):.1f} {(52 if i % 2 == 0 else 45) * __import__('math').sin(i * __import__('math').pi / 16):.1f}" for i in range(32)) + '''Z"/>
       <circle r="38" fill="#fff8e1" stroke="#d4921c" stroke-width="3"/>
-      <text y="5" text-anchor="middle" font-family="Fredoka, system-ui, sans-serif" font-weight="700" font-size="31" fill="#123a6b">6×</text>
+      <text y="5" text-anchor="middle" font-family="Fredoka, system-ui, sans-serif" font-weight="700" font-size="31" fill="#521034">6×</text>
       <!-- curved along the bottom of the medal's face so it fits inside the rim -->
       <path id="medalArc" d="M-28.5 0 A28.5 28.5 0 0 0 28.5 0" fill="none"/>
-      <text font-family="Jost, system-ui, sans-serif" font-weight="700" font-size="8" letter-spacing="1.1" fill="#c2457f"><textPath href="#medalArc" startOffset="50%" text-anchor="middle">BEST IN MESA</textPath></text>
+      <text font-family="Jost, system-ui, sans-serif" font-weight="700" font-size="8" letter-spacing="1.1" fill="#2e8496"><textPath href="#medalArc" startOffset="50%" text-anchor="middle">BEST IN MESA</textPath></text>
     </g>
   </svg>
   <div class="award-txt">

@@ -280,7 +280,7 @@
     if (h.dataset.dressed || (!can3d && !canFur)) return;
     h.dataset.dressed = '1';
     const fs = parseFloat(getComputedStyle(h).fontSize) || 64, px = Math.max(80, Math.min(120, fs));
-    const C = H3.colors || {}, color = C[h.dataset.color || 'plum'] || '#2f6fd6', hue = h.dataset.fur || 'pink';
+    const C = H3.colors || {}, color = C[h.dataset.color || 'plum'] || '#6b1c47', hue = h.dataset.fur || 'pink';
     const accentColor = C[h.dataset.accent || h.dataset.fur || 'teal'] || C.teal;
     const words = wordsOf(h); if (!words.length) return;
     const src = document.createElement('span'); src.className = 't-src'; src.textContent = h.textContent.trim().replace(/\s+/g, ' ');
@@ -477,7 +477,7 @@
     const lightYears = () => $$('.years span', stage).forEach((y, i) => setTimeout(() => { y.style.transitionDelay = '0s'; y.style.opacity = 1; y.style.transform = 'none'; sfx('pop', 1 + i * .08); }, 250 + i * 160));
     const confetti = () => {   // one burst from behind the curtain line
       const box = document.createElement('div'); box.className = 'confetti'; box.setAttribute('aria-hidden', 'true');
-      const C = ['#ec6fa9', '#ffd77a', '#7cc4f5', '#ffffff', '#f5c542', '#ff9ccc'];
+      const C = ['#43a7b8', '#ffd77a', '#43a7b8', '#ffffff', '#f5c542', '#6cc2d1'];
       for (let i = 0; i < (reduce ? 0 : 90); i++) {
         const c = document.createElement('i');
         c.style.cssText = `--x:${(Math.random() - .5) * 120}vw;--y:${-40 - Math.random() * 60}vh;--fall:${50 + Math.random() * 40}vh;--r:${Math.random() * 1080 - 540}deg;--d:${1.8 + Math.random() * 1.4}s;--dl:${Math.random() * .25}s;background:${C[i % C.length]};left:${30 + Math.random() * 40}%`;
@@ -776,7 +776,7 @@
     let W, Hh, dpr;
     const size = () => { dpr = Math.min(2, devicePixelRatio || 1); W = cv.width = innerWidth * dpr; Hh = cv.height = innerHeight * dpr; };
     size(); addEventListener('resize', size);
-    const PAL = ['#2f6fd6', '#ff7fb8', '#ff8fc6', '#f2b233', '#123a6b'];
+    const PAL = ['#6b1c47', '#43a7b8', '#7fcad7', '#f2b233', '#521034'];
     const drawPaw = (x, y, ang, s, alpha, color) => {
       ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.scale(s, s);
       ctx.globalAlpha = alpha; ctx.fillStyle = color;

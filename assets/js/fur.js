@@ -6,7 +6,7 @@
 (() => {
   const H = window.HPP3D = window.HPP3D || {};
   const PAL = {
-    pink: { root: [196, 86, 134], mid: [238, 140, 184], tip: [255, 222, 236] },
+    pink: { root: [30, 120, 138], mid: [92, 190, 206], tip: [222, 246, 250] },   // original-scheme teal
     teal: { root: [22, 120, 140], mid: [72, 190, 208], tip: [214, 248, 252] },
     butter: { root: [196, 140, 40], mid: [250, 200, 90], tip: [255, 244, 210] },
     white: { root: [178, 192, 212], mid: [236, 242, 250], tip: [255, 255, 255] },
