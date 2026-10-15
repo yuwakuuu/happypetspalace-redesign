@@ -1056,3 +1056,6 @@ footer .credits a{color:inherit}
 .tour-frame{margin:30px auto 0;max-width:1080px;aspect-ratio:16/9;border-radius:30px;overflow:hidden;background:#0a1730;border:6px solid var(--card);box-shadow:var(--shadow)}
 .tour-frame video{display:block;width:100%;height:100%;object-fit:cover;background:#0a1730}
 @media (max-width:640px){.tour-sec{padding:44px 0 10px}.tour-frame{border-radius:20px;border-width:4px}}
+
+/* loading screens: no floating bubbles */
+#loader .fx .b,#wipe .fx .b{display:none}
