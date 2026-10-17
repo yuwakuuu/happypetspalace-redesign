@@ -364,6 +364,7 @@
       retireChips();
       if (intent === 'book') { me('I’d like to book'); runFlow(booking); }
       else if (intent === 'prescreen') { me('Schedule a pre-screen'); runFlow(prescreen); }
+      else if (intent.startsWith('ask:')) { started = true; setTimeout(() => send(intent.slice(4)), 250); }
     } else if (!started) greet();
     setTimeout(() => input.focus({ preventScroll: true }), 300);
   };
