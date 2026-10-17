@@ -13,7 +13,7 @@ After editing, rebuild the site files in the root:
 - `assets/js/puffy3d.js` — real-time three.js puffy 3D lettering (live hero titles + heading words)
 - `assets/js/fur.js` — hair-by-hair fluffy fur lettering (heading accent words in `<span class="s">`)
 - `assets/js/sfx.js` — synthesized sound effects (Web Audio, no files)
-- `assets/js/chat.js` — Lacy, the black-and-tan Pomeranian concierge (FAQ, booking, pre-screen scheduling)
+- `assets/js/chat.js` — Lacy, Linda's princess and the AI concierge (FAQ, booking, pre-screen scheduling)
 - `assets/fonts/fredoka.js` — Fredoka Bold converted for three.js by `_tools/font2three.py`
 - `assets/img/` — photos pulled from the original site at full resolution, resized and sharpened
 
