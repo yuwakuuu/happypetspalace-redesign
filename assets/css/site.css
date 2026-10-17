@@ -1104,3 +1104,39 @@ html.lite .card,html.lite .svc,html.lite .panel,html.lite .rvf-in{box-shadow:0 6
 html.lite[data-theme="dark"] h2 .s{color:var(--teal)}
 .lite-toast span{min-width:0}
 @media (max-width:640px){.lite-toast{width:calc(100vw - 32px);bottom:calc(100px + env(safe-area-inset-bottom,0px));font-size:14px}}
+
+/* ---------- Talk to Lacy (AI concierge) ---------- */
+.hero-lacy{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;background:var(--teal-soft);color:var(--plum);text-decoration:none;font-size:15px;border:1px solid color-mix(in srgb,var(--teal) 35%,transparent);transition:transform .35s var(--spring)}
+.hero-lacy img{width:28px;height:28px;border-radius:50%;background:var(--teal);padding:2px}
+.hero-lacy b{color:var(--teal-d)}
+.hero-lacy:hover{transform:translateY(-2px)}
+.lacy-sec{padding:60px 0 30px}
+.lacy-card{position:relative;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:40px;align-items:center;padding:56px 56px 56px 40px;border-radius:40px;overflow:hidden;color:#fff;
+  background:radial-gradient(70% 90% at 18% 40%,rgba(67,167,184,.35),rgba(67,167,184,0) 70%),radial-gradient(120% 140% at 100% 0%,#7a2a56 0%,var(--plum) 55%,#3d0b26 100%);box-shadow:var(--shadow)}
+:root[data-theme="dark"] .lacy-card{background:radial-gradient(70% 90% at 18% 40%,rgba(67,167,184,.3),rgba(67,167,184,0) 70%),radial-gradient(120% 140% at 100% 0%,#5a1a3d 0%,#3d0b26 60%,#22060f 100%)}
+.lacy-art{position:relative;height:340px;display:grid;place-items:center}
+.lacy-halo{position:absolute;width:300px;height:300px;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.09) 0 9deg,transparent 9deg 18deg);-webkit-mask:radial-gradient(circle,#000 25%,transparent 70%);mask:radial-gradient(circle,#000 25%,transparent 70%);animation:spin 18s linear infinite}
+.lacy-pup{position:relative;z-index:1;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#7fcad7,#43a7b8 60%,#2e8496);box-shadow:0 0 0 10px rgba(255,255,255,.12),0 30px 60px -20px rgba(0,0,0,.5);display:grid;place-items:center;animation:lacyBob 2.6s ease-in-out infinite}
+.lacy-pup img{width:190px;height:190px;display:block}
+.lacy-shadow{position:absolute;bottom:22px;width:150px;height:18px;border-radius:50%;background:rgba(0,0,0,.28);filter:blur(4px);animation:lacyShadow 2.6s ease-in-out infinite}
+.lacy-ai{position:absolute;z-index:2;top:58px;right:calc(50% - 128px);padding:6px 12px;border-radius:999px;background:#fff;color:var(--plum);font:800 15px var(--font-l,var(--font-b));letter-spacing:.12em;box-shadow:0 8px 20px -8px rgba(0,0,0,.4)}
+.lacy-say{position:absolute;z-index:2;top:8px;left:calc(50% - 170px);padding:12px 16px;border-radius:18px 18px 18px 6px;background:#fff;color:var(--ink);font:600 16px var(--font-b);box-shadow:0 12px 28px -12px rgba(0,0,0,.45);animation:lacySay 4.5s ease-in-out infinite}
+@keyframes lacyBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-14px) rotate(2deg)}}
+@keyframes lacyShadow{0%,100%{transform:scaleX(1);opacity:1}50%{transform:scaleX(.8);opacity:.7}}
+@keyframes lacySay{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.lacy-copy{min-width:0}
+.lacy-copy .eyebrow{color:#a9dbe4}
+.lacy-copy h2{color:#fff;margin:10px 0 14px}
+.lacy-copy h2 .s{color:#7fcad7}
+.lacy-copy .lede{color:rgba(255,255,255,.88);max-width:560px}
+.lacy-can{list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;margin:22px 0 0;padding:0;font-size:16.5px;color:#fff}
+.lacy-try{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:24px}
+.lacy-try span{font:700 13px var(--font-l,var(--font-b));letter-spacing:.18em;text-transform:uppercase;color:#a9dbe4;margin-right:4px}
+.lacy-try button{border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;padding:9px 15px;font:500 15px var(--font-b);cursor:pointer;transition:background .25s,border-color .25s,transform .35s var(--spring)}
+.lacy-try button:hover{background:#fff;color:var(--plum);border-color:#fff;transform:translateY(-2px)}
+.lacy-go{margin-top:26px;--b:#fff;--c:var(--plum);--h1:var(--teal);--h2:var(--teal-d);font-size:18px;padding:14px 26px 14px 14px}
+.lacy-go img{width:30px;height:30px;border-radius:50%;background:var(--teal);padding:2px}
+@media (max-width:900px){.lacy-card{grid-template-columns:1fr;padding:34px 22px 30px;gap:6px;border-radius:30px}.lacy-art{height:280px}.lacy-pup{width:180px;height:180px}.lacy-pup img{width:156px;height:156px}.lacy-halo{width:250px;height:250px}.lacy-say{left:8px;font-size:14px}.lacy-ai{top:44px;right:calc(50% - 108px)}}
+@media (max-width:520px){.lacy-can{grid-template-columns:1fr}.lacy-go{width:100%;justify-content:center}}
+html.lite .lacy-halo,html.lite .lacy-pup,html.lite .lacy-shadow,html.lite .lacy-say{animation:none}
+@media (prefers-reduced-motion:reduce){.lacy-halo,.lacy-pup,.lacy-shadow,.lacy-say{animation:none}}
