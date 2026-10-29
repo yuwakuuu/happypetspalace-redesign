@@ -1,5 +1,8 @@
 # Happy Pets Palace — website redesign (mockup)
 
+> **This demo has moved to https://tmpbizz.com/demo/happypets/**  
+> The pages here now forward old links to the same page there. Its source (`_src/`, `_tools/`) now lives in the `demo/happypets` folder of github.com/yuwakuuu/tmp, so make changes there; running `_tools/build.py` in this repo would bring back the old pages.
+
 Open `index.html` in a browser (an internet connection is needed for fonts, three.js, maps and booking).
 
 ## Editing pages
